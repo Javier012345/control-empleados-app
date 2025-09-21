@@ -1,17 +1,17 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useTheme } from '@react-navigation/native';
 import { collection, query, where, Timestamp, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../src/config/firebaseConfig';
 
 // Componente reutilizable para las tarjetas de estadísticas
-const StatCard = ({ icon, title, value, color }) => (
-  <View style={[styles.card, { borderLeftColor: color }]}>
+const StatCard = ({ icon, title, value, color, styles }) => (
+  <View style={[styles.card, { borderLeftColor: color, backgroundColor: styles.card.backgroundColor }]}>
     <FontAwesome name={icon} size={32} color={color} style={styles.cardIcon} />
     <View>
-      <Text style={styles.cardValue}>{value}</Text>
-      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={[styles.cardValue, { color: styles.cardValue.color }]}>{value}</Text>
+      <Text style={[styles.cardTitle, { color: styles.cardTitle.color }]}>{title}</Text>
     </View>
   </View>
 );
@@ -25,6 +25,9 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { colors } = useTheme();
+  // Creamos los estilos dinámicamente basados en el tema
+  const styles = getStyles(colors);
 
   const fetchDataAndSetupListeners = useCallback(() => {
     const employeesCollection = collection(db, 'employees');
@@ -90,7 +93,7 @@ export default function Home() {
   }, []);
 
   if (loading) {
-    return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#dc3545" /></View>;
+    return <View style={styles.centerContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
 
   // Ya no necesitamos la función fetchDashboardData ni el useFocusEffect
@@ -131,14 +134,14 @@ export default function Home() {
     <ScrollView 
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#dc3545"]} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
       }
     >
       <View style={styles.grid}>
-        <StatCard icon="users" title="Total de Empleados" value={stats.totalEmployees} color="#17a2b8" />
-        <StatCard icon="user-plus" title="Nuevas Contrataciones" value={stats.newHires} color="#28a745" />
-        <StatCard icon="exclamation-triangle" title="Sanciones del Mes" value={stats.monthlySanctions} color="#ffc107" />
-        <StatCard icon="check-square-o" title="Asistencias de Hoy" value={stats.todayAttendances} color="#007bff" />
+        <StatCard icon="users" title="Total de Empleados" value={stats.totalEmployees} color="#17a2b8" styles={styles} />
+        <StatCard icon="user-plus" title="Nuevas Contrataciones" value={stats.newHires} color="#28a745" styles={styles} />
+        <StatCard icon="exclamation-triangle" title="Sanciones del Mes" value={stats.monthlySanctions} color="#ffc107" styles={styles} />
+        <StatCard icon="check-square-o" title="Asistencias de Hoy" value={stats.todayAttendances} color="#007bff" styles={styles} />
       </View>
       
       {/* Aquí puedes agregar más componentes para tu dashboard */}
@@ -151,16 +154,17 @@ export default function Home() {
   );
 }
 
-const styles = StyleSheet.create({
+// Función que genera los estilos
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   grid: {
     flexDirection: 'row',
@@ -169,7 +173,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 8,
     padding: 15,
     width: '46%', // Para que quepan dos por fila con un pequeño espacio
@@ -189,15 +193,15 @@ const styles = StyleSheet.create({
   cardValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#343a40',
+    color: colors.text,
   },
   cardTitle: {
     fontSize: 13,
-    color: '#6c757d',
+    color: colors.text,
     fontWeight: '500',
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: colors.card,
     marginHorizontal: 10,
     borderRadius: 8,
     padding: 20,
@@ -207,11 +211,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#343a40',
+    color: colors.text,
   },
   placeholderText: {
     textAlign: 'center',
-    color: '#6c757d',
+    color: colors.text,
     paddingVertical: 20,
   }
 });

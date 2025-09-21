@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image, ScrollView } from 'react-native';
+import { useTheme } from '@react-navigation/native';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../src/config/firebaseConfig';
 
@@ -7,6 +8,8 @@ export default function VerEmpleado({ route }) {
   const { employeeId } = route.params;
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -36,11 +39,11 @@ export default function VerEmpleado({ route }) {
   }, [employeeId]);
 
   if (loading) {
-    return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#dc3545" /></View>;
+    return <View style={styles.centerContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
 
   if (!employee) {
-    return <View style={styles.centerContainer}><Text>No se pudo cargar la información del empleado.</Text></View>;
+    return <View style={styles.centerContainer}><Text style={{ color: colors.text }}>No se pudo cargar la información del empleado.</Text></View>;
   }
 
   const statusStyle = employee.status === 'Activo' ? styles.statusActive : styles.statusInactive;
@@ -70,17 +73,46 @@ export default function VerEmpleado({ route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { alignItems: 'center', padding: 20, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' },
+const getStyles = (colors) => StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: colors.background 
+  },
+  centerContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: colors.background 
+  },
+  header: { 
+    alignItems: 'center', 
+    padding: 20, 
+    backgroundColor: colors.card, 
+    borderBottomWidth: 1, 
+    borderBottomColor: colors.border 
+  },
   avatar: { width: 120, height: 120, borderRadius: 60, marginBottom: 15 },
-  name: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  position: { fontSize: 18, color: '#666', marginTop: 4 },
+  name: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: colors.text 
+  },
+  position: { 
+    fontSize: 18, 
+    color: colors.text, 
+    opacity: 0.7, 
+    marginTop: 4 
+  },
   detailsContainer: { padding: 20 },
-  detailItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  detailLabel: { fontSize: 16, color: '#555', fontWeight: 'bold' },
-  detailValue: { fontSize: 16, color: '#333' },
+  detailItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingVertical: 15, 
+    borderBottomWidth: 1, 
+    borderBottomColor: colors.border 
+  },
+  detailLabel: { fontSize: 16, color: colors.text, opacity: 0.8, fontWeight: 'bold' },
+  detailValue: { fontSize: 16, color: colors.text },
   statusActive: { color: '#28a745', fontWeight: 'bold' },
   statusInactive: { color: '#ffc107', fontWeight: 'bold' },
 });

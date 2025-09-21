@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { NavigationContainer, DrawerActions } from '@react-navigation/native';
+import { NavigationContainer, DrawerActions, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { onAuthStateChanged, signOut } from 'firebase/auth';  
 import { auth } from '../src/config/firebaseConfig';  
-import { FontAwesome } from '@expo/vector-icons'; // Ya está importado
+import { FontAwesome } from '@expo/vector-icons';
+import { useAppContext } from '../src/context/AppContext'; // 1. Importar el hook del contexto
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
@@ -13,6 +14,7 @@ import Empleados from '../screens/Empleados/Empleados'; // Ruta y nombre actuali
 import AgregarEmpleado from '../screens/Empleados/AgregarEmpleado'; // Ruta y nombre actualizados
 import VerEmpleado from '../screens/Empleados/VerEmpleado';
 import EditarEmpleado from '../screens/Empleados/EditarEmpleado';
+import Notifications from '../screens/Notifications'; // Importar la nueva pantalla
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -23,24 +25,46 @@ const headerOptions = {
 };
 
 // Función para generar opciones de cabecera consistentes
-const getHeaderOptions = (title, navigation) => ({
-  headerTitle: title,
-  headerLeft: () => (
-    <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} style={{ marginLeft: 15 }}>
-      <FontAwesome name="bars" size={24} color="#444" />
-    </TouchableOpacity>
-  ),
-  headerRight: () => (
+const getHeaderOptions = (title, navigation) => {
+  const { theme } = useAppContext();
+  const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+
+  return {
+    headerTitle: title,
+    headerLeft: () => (
+      <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} style={{ marginLeft: 15 }}>
+        <FontAwesome name="bars" size={24} color={colors.text} />
+      </TouchableOpacity>
+    ),
+    headerRight: () => <HeaderRightIcons navigation={navigation} />,
+  };
+};
+
+// Componente para los iconos del header que usa el contexto
+function HeaderRightIcons({ navigation }) {
+  const { theme, toggleTheme, userRole, toggleUserRole } = useAppContext();
+  const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+
+  return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-      <TouchableOpacity onPress={() => alert('Modo Oscuro')} style={{ marginRight: 20 }}><FontAwesome name="moon-o" size={24} color="#444" /></TouchableOpacity>
-      <TouchableOpacity onPress={() => alert('Notificaciones')} style={{ marginRight: 20 }}><FontAwesome name="bell-o" size={24} color="#444" /></TouchableOpacity>
-      <TouchableOpacity onPress={() => alert('Modo Admin')}><FontAwesome name="user-secret" size={24} color="#444" /></TouchableOpacity>
+      <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 20 }}>
+        <FontAwesome name={theme === 'light' ? 'moon-o' : 'sun-o'} size={24} color={colors.text} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 20 }}>
+        <FontAwesome name="bell-o" size={24} color={colors.text} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={toggleUserRole}>
+        <FontAwesome name="user-secret" size={24} color={userRole === 'admin' ? '#dc3545' : '#444'} />
+      </TouchableOpacity>
     </View>
-  ),
-});
+  );
+}
 
 // Componente personalizado para el contenido del Drawer
 function CustomDrawerContent(props) {
+  const { theme } = useAppContext();
+  const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -57,9 +81,9 @@ function CustomDrawerContent(props) {
       </View>
 
       {/* Botón de Cerrar Sesión en la parte inferior */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-        <FontAwesome name="sign-out" size={22} color="#444" />
-        <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+      <TouchableOpacity style={[styles.logoutButton, { borderTopColor: colors.border }]} onPress={handleSignOut}>
+        <FontAwesome name="sign-out" size={22} color={colors.text} />
+        <Text style={[styles.logoutButtonText, { color: colors.text }]}>Cerrar Sesión</Text>
       </TouchableOpacity>
     </DrawerContentScrollView>
   );
@@ -72,7 +96,12 @@ function HomeStack({ navigation }) {
       <Stack.Screen 
         name="Dashboard" 
         component={Home}
-        options={getHeaderOptions('Dashboard', navigation)}
+        options={getHeaderOptions('Inicio', navigation)}
+      />
+      <Stack.Screen 
+        name="Notifications"
+        component={Notifications}
+        options={{ headerTitle: 'Notificaciones', headerBackTitle: 'Volver' }}
       />
     </Stack.Navigator>
   );
@@ -85,7 +114,7 @@ function EmployeesStack({ navigation }) {
       <Stack.Screen 
         name="EmployeeList"
         component={Empleados}
-        options={getHeaderOptions('Empleados', navigation)}
+        options={({ navigation }) => getHeaderOptions('Empleados', navigation)}
       />
       <Stack.Screen 
         name="AgregarEmpleado"
@@ -110,7 +139,8 @@ function EmployeesStack({ navigation }) {
 function Navigation() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const { theme } = useAppContext();
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       setUser(user);
@@ -126,7 +156,7 @@ function Navigation() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={theme === 'light' ? lightTheme : darkTheme}>
       <Stack.Navigator>
         {user ? (
           <Stack.Screen name="AppDrawer" options={{ headerShown: false }}>
@@ -136,12 +166,12 @@ function Navigation() {
                 screenOptions={{ 
                   headerShown: false,
                   // Opcional: Estilos para el menú lateral
-                  drawerActiveBackgroundColor: '#dc354520',
-                  drawerActiveTintColor: '#dc3545',
+                  drawerActiveBackgroundColor: theme === 'light' ? '#dc354520' : '#e5737340',
+                  drawerActiveTintColor: theme === 'light' ? '#dc3545' : '#e57373',
                 }}
                 drawerContent={(props) => <CustomDrawerContent {...props} />}
               >
-                <Drawer.Screen name="Inicio" component={HomeStack} options={{ title: 'Dashboard' }} />
+                <Drawer.Screen name="Inicio" component={HomeStack} options={{ title: 'Inicio' }} />
                 <Drawer.Screen name="Empleados" component={EmployeesStack} />
                 <Drawer.Screen name="Sanciones" component={HomeStack} /> 
                 <Drawer.Screen name="Horarios" component={HomeStack} />
@@ -161,6 +191,30 @@ function Navigation() {
     </NavigationContainer>
   );
 }
+
+const lightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#f8f9fa',
+    card: '#ffffff',
+    text: '#212529',
+    primary: '#dc3545',
+    border: '#dee2e6',
+  },
+};
+
+const darkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: '#121212',
+    card: '#1e1e1e',
+    text: '#ffffff',
+    primary: '#e57373',
+    border: '#272727',
+  },
+};
 
 const styles = StyleSheet.create({
   logoutButton: {
