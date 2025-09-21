@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
 import { db, auth } from '../../src/config/firebaseConfig'; // Importar 'auth'
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 
-const EmployeeItem = ({ item, navigation }) => {
+const EmployeeItem = ({ item, navigation, colors }) => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const styles = getStyles(colors);
 
   const handleDelete = () => {
     // Función que realiza el borrado
@@ -86,6 +87,8 @@ export default function Empleados({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
 
   useFocusEffect(
     useCallback(() => {
@@ -127,14 +130,14 @@ export default function Empleados({ navigation }) {
     <View style={styles.container}>
       <FlatList
         data={filteredEmployees}
-        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} />}
+        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} colors={colors} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={<Text style={styles.emptyListText}>No se encontraron empleados.</Text>}
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.searchContainer}>
-              <FontAwesome name="search" size={18} color="#9e9e9e" style={styles.searchIcon} />
+              <FontAwesome name="search" size={18} color={colors.border} style={styles.searchIcon} />
               <TextInput
                 placeholder="Buscar por nombre o DNI..."
                 style={styles.searchInput}
@@ -153,22 +156,23 @@ export default function Empleados({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   listContainer: {
     paddingHorizontal: 15,
     paddingBottom: 20, // Espacio al final de la lista
   },
   itemContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     padding: 16,
     borderRadius: 10,
     marginBottom: 15,
@@ -198,23 +202,24 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 17,
     fontWeight: 'bold',
-    color: '#212529',
+    color: colors.text,
   },
   position: {
     fontSize: 14,
-    color: '#6c757d',
+    color: colors.text,
+    opacity: 0.7,
   },
   moreButton: {
     padding: 8,
   },
   itemBody: {
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: colors.border,
     paddingTop: 12,
   },
   detailText: {
     fontSize: 14,
-    color: '#495057',
+    color: colors.text,
     marginBottom: 4,
   },
   detailLabel: {
@@ -232,7 +237,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: colors.border,
     marginTop: 12,
     paddingTop: 8,
   },
@@ -249,16 +254,16 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 20, // Espacio arriba de la barra de búsqueda
     paddingBottom: 10, // Espacio debajo del botón
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderRadius: 8,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: colors.border,
     marginBottom: 15,
   },
   searchIcon: {
@@ -268,12 +273,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     fontSize: 16,
+    color: colors.text,
   },
   registerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#dc3545',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     borderRadius: 8,
     shadowColor: "#000",
@@ -295,6 +301,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 50,
     fontSize: 16,
-    color: '#6c757d',
+    color: colors.text,
+    opacity: 0.6,
   },
 });
