@@ -18,6 +18,38 @@ export default function SignUp({ navigation }) {
   const [error, setError] = useState('');
   const { colors } = useTheme();
   const styles = getStyles(colors);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [emailError, setEmailError] = useState('');
+
+  const handleEmailChange = (text) => {
+  setEmail(text);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(text)) {
+    setEmailError('El formato del correo electrónico no es válido.');
+  } else {
+    setEmailError('');
+  }
+};
+
+  const handleConfirmPasswordChange = (text) => {
+  setConfirmPassword(text);
+  if (password && text !== password) {
+    setConfirmPasswordError('Las contraseñas no coinciden.');
+  } else {
+    setConfirmPasswordError('');
+  }
+};
+
+  const handlePasswordChange = (text) => {
+  setPassword(text);
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+  if (!passwordRegex.test(text)) {
+    setPasswordError('Debe tener al menos 6 caracteres, una mayúscula, una minúscula y un número.');
+  } else {
+    setPasswordError('');
+  }
+};
 
   const handleSignUp = async () => {
     setError('');
@@ -30,6 +62,7 @@ export default function SignUp({ navigation }) {
       setError("Las contraseñas no coinciden.");
       return;
     }
+    
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
     if (!passwordRegex.test(password)) {
@@ -115,11 +148,12 @@ export default function SignUp({ navigation }) {
           placeholder="Ingrese su correo"
           placeholderTextColor={colors.border}
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           keyboardType="email-address"
           autoCapitalize="none"
         />
       </View>
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
       {/* <Text style={styles.label}>Contraseña</Text> */}
       <View style={styles.inputContainer}>
@@ -129,13 +163,14 @@ export default function SignUp({ navigation }) {
           placeholder="Ingrese su contraseña"
           placeholderTextColor={colors.border}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
+      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
       {/* <Text style={styles.label}>Confirmar Contraseña</Text> */}
       <View style={styles.inputContainer}>
@@ -145,13 +180,15 @@ export default function SignUp({ navigation }) {
           placeholder="Confirme su contraseña"
           placeholderTextColor={colors.border}
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={handleConfirmPasswordChange}
           secureTextEntry={!showConfirmPassword}
+          
         />
         <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
           <FontAwesome name={showConfirmPassword ? "eye-slash" : "eye"} size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
+      {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
