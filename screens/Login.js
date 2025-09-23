@@ -14,38 +14,59 @@ export default function Login({ navigation }) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
   
-  const handleLogin = async () => {
-    setError(''); // Limpiar errores previos
-    if (!email || !password) {
-      setError("Por favor, ingrese correo y contraseña.");
-      return;
-    }
+// ...existing code...
+const handleLogin = async () => {
+  setError(''); // Limpiar errores previos
 
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // La navegación a Home se gestionará automáticamente por el listener de estado de autenticación en navigation.js
-    } catch (error) {
-      let errorMessage = "Hubo un problema al iniciar sesión.";
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = "El formato del correo electrónico no es válido.";
-          break;
-        case 'auth/wrong-password':
-          errorMessage = "La contraseña es incorrecta.";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No se encontró un usuario con este correo.";
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = "Error de conexión, por favor intenta más tarde.";
-          break;
-      }
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+  if (!email.trim()) {
+    setError("El correo es obligatorio.");
+    return;
+  }
+  if (!password) {
+    setError("La contraseña es obligatoria.");
+    return;
+  }
+
+  // Validación de formato de correo
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    setError("El formato del correo electrónico no es válido.");
+    return;
+  }
+
+  // Validación de contraseña segura
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+  if (!passwordRegex.test(password)) {
+    setError("La contraseña debe tener al menos 6 caracteres, incluyendo una letra mayúscula, una minúscula y un número.");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    // La navegación a Home se gestionará automáticamente por el listener de estado de autenticación en navigation.js
+  } catch (error) {
+    let errorMessage = "Hubo un problema al iniciar sesión.";
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMessage = "El formato del correo electrónico no es válido.";
+        break;
+      case 'auth/wrong-password':
+        errorMessage = "La contraseña es incorrecta.";
+        break;
+      case 'auth/user-not-found':
+        errorMessage = "No se encontró un usuario con este correo.";
+        break;
+      case 'auth/network-request-failed':
+        errorMessage = "Error de conexión, por favor intenta más tarde.";
+        break;
     }
-  };
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+// ...existing code...
 
   return (
     <View style={styles.container}>
