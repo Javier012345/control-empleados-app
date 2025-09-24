@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
 import { NavigationContainer, DrawerActions, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
@@ -75,6 +75,14 @@ function CustomDrawerContent(props) {
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
+      <View style={[styles.drawerHeader, { borderBottomColor: colors.border }]}>
+        <Image 
+          source={require('../assets/logo-nuevas-energias-v2.png')} 
+          style={styles.drawerLogo}
+          resizeMode="contain"
+        />
+      </View>
+
       {/* Renderiza los items normales del menú */}
       <View style={{ flex: 1 }}>
         <DrawerItemList {...props} />
@@ -196,11 +204,12 @@ const lightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: '#f8f9fa',
-    card: '#ffffff',
-    text: '#212529',
-    primary: '#dc3545',
-    border: '#dee2e6',
+    background: '#F9FAFB',
+    card: '#FFFFFF',
+    text: '#1F2937',
+    primary: '#D9232D',
+    border: '#D1D5DB',
+    placeholder: '#9CA3AF',
   },
 };
 
@@ -208,27 +217,35 @@ const darkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: '#121212',
-    card: '#1e1e1e',
-    text: '#ffffff',
+    background: '#111827',
+    card: '#1F2937',
+    text: '#FFFFFF',
     primary: '#e57373',
-    border: '#272727',
+    border: '#374151',
+    placeholder: '#6B7280',
   },
 };
 
 const styles = StyleSheet.create({
+  drawerHeader: {
+    padding: 20,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+  },
+  drawerLogo: {
+    width: 150,
+    height: 150,
+  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
   logoutButtonText: {
     marginLeft: 15,
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#444',
   },
 });
 

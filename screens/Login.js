@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 import { useTheme } from '@react-navigation/native';
@@ -10,169 +10,188 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
   
-// ...existing code...
-const handleLogin = async () => {
-  setError(''); // Limpiar errores previos
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [generalError, setGeneralError] = useState('');
 
-  if (!email.trim()) {
-    setError("El correo es obligatorio.");
-    return;
-  }
-  if (!password) {
-    setError("La contraseña es obligatoria.");
-    return;
-  }
+  const { dark: isDarkMode, colors } = useTheme();
+  const styles = getStyles(isDarkMode, colors);
 
-  // Validación de formato de correo
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    setError("El formato del correo electrónico no es válido.");
-    return;
-  }
-
-  // Validación de contraseña segura
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-  if (!passwordRegex.test(password)) {
-    setError("La contraseña debe tener al menos 6 caracteres, incluyendo una letra mayúscula, una minúscula y un número.");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    // La navegación a Home se gestionará automáticamente por el listener de estado de autenticación en navigation.js
-  } catch (error) {
-    let errorMessage = "Hubo un problema al iniciar sesión.";
-    switch (error.code) {
-      case 'auth/invalid-email':
-        errorMessage = "El formato del correo electrónico no es válido.";
-        break;
-      case 'auth/wrong-password':
-        errorMessage = "La contraseña es incorrecta.";
-        break;
-      case 'auth/user-not-found':
-        errorMessage = "No se encontró un usuario con este correo.";
-        break;
-      case 'auth/network-request-failed':
-        errorMessage = "Error de conexión, por favor intenta más tarde.";
-        break;
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      setEmailError('El correo es obligatorio.');
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('El formato del correo no es válido.');
+      return false;
+    } else {
+      setEmailError('');
+      return true;
     }
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
-// ...existing code...
+  };
 
- // ...existing code...
+  const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    if (!password) {
+      setPasswordError('La contraseña es obligatoria.');
+      return false;
+    } else if (!passwordRegex.test(password)) {
+      setPasswordError('Debe tener 6+ caracteres, mayúscula, minúscula y número.');
+      return false;
+    } else {
+      setPasswordError('');
+      return true;
+    }
+  };
+
+  const handleLogin = async () => {
+    setGeneralError('');
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navigation to Home is handled by the auth state listener
+    } catch (error) {
+      let errorMessage = "Hubo un problema al iniciar sesión.";
+      switch (error.code) {
+        case 'auth/invalid-email':
+        case 'auth/user-not-found':
+          setEmailError("No se encontró un usuario con este correo.");
+          break;
+        case 'auth/wrong-password':
+          setPasswordError("La contraseña es incorrecta.");
+          break;
+        case 'auth/network-request-failed':
+          setGeneralError("Error de conexión. Por favor, intenta más tarde.");
+          break;
+        default:
+          setGeneralError(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.title}>Iniciar sesión</Text>
-      <Text style={styles.description}>Bienvenido. Ingresa tus credenciales para continuar.</Text>
+      <Text style={styles.title}>Bienvenido de Vuelta</Text>
+      <Text style={styles.description}>Inicia sesión para acceder a tu panel.</Text>
 
-      {/* Etiqueta para el correo */}
-      <Text style={styles.label}>Email</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={20} color={colors.text} style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su correo"
-          placeholderTextColor={colors.border}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <View style={styles.inputWrapper}>
+        <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
+          <Feather name="mail" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="ejemplo@email.com"
+            placeholderTextColor={colors.placeholder}
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              validateEmail(text);
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
       </View>
 
-      {/* Etiqueta para la contraseña */}
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputContainer}>
-        <FontAwesome name="lock" size={20} color={colors.text} style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su contraseña"
-          placeholderTextColor={colors.border}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color={colors.text} />
-        </TouchableOpacity>
+      <View style={styles.inputWrapper}>
+        <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
+          <Feather name="lock" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            placeholderTextColor={colors.placeholder}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              validatePassword(text);
+            }}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
+          </TouchableOpacity>
+        </View>
+        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
       </View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {generalError ? <Text style={styles.generalErrorText}>{generalError}</Text> : null}
 
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#ffffff" />
         ) : (
-          <Text style={styles.buttonText}>Ingresar</Text>
+          <Text style={styles.buttonText}>Iniciar Sesión</Text>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.signUpText}>¿No tienes cuenta aún? Regístrate</Text>
+        <Text style={styles.signUpText}>
+          ¿No tienes una cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-const getStyles = (colors) => StyleSheet.create({
+const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
     backgroundColor: colors.background,
   },
   logo: {
-    width: 220,
-    height: 220,
-    marginBottom: 30,
+    width: 150,
+    height: 150,
+    marginBottom: 40,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: '700',
     color: colors.text,
+    marginBottom: 8,
   },
   description: {
     fontSize: 16,
     color: colors.text,
     opacity: 0.7,
-    textAlign: 'center',
-    marginBottom: 30,
-    maxWidth: '85%',
+    marginBottom: 24,
   },
-  label: {
-    alignSelf: 'flex-start',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: colors.text,
+  inputWrapper: {
+    width: '100%',
+    marginBottom: 12,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    borderRadius: 8,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    height: 50,
-    marginBottom: 15,
     width: '100%',
+    height: 50,
+  },
+  inputError: {
+    borderColor: colors.primary,
   },
   icon: {
-    marginRight: 10,
-    opacity: 0.7,
+    color: colors.text,
+    opacity: 0.6,
+    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -182,9 +201,9 @@ const getStyles = (colors) => StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    paddingVertical: 15,
-    borderRadius: 10,
-    marginTop: 20,
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 16,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -193,15 +212,28 @@ const getStyles = (colors) => StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   errorText: {
     color: colors.primary,
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  generalErrorText: {
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 10,
+    fontSize: 14,
   },
   signUpText: {
-    marginTop: 20,
+    marginTop: 24,
+    color: colors.text,
+    opacity: 0.7,
+    fontSize: 14,
+  },
+  signUpLink: {
     color: colors.primary,
+    fontWeight: '600',
   },
 });

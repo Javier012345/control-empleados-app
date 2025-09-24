@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -44,54 +44,50 @@ export default function AgregarEmpleado({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Datos del Empleado</Text>
+        <Text style={styles.title}>Registrar Nuevo Empleado</Text>
 
-        <Text style={styles.label}>Nombre</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el nombre"
-            placeholderTextColor={colors.border}
+            placeholder="Nombre"
+            placeholderTextColor={colors.placeholder}
             value={firstName}
             onChangeText={setFirstName}
           />
         </View>
 
-        <Text style={styles.label}>Apellido</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el apellido"
-            placeholderTextColor={colors.border}
+            placeholder="Apellido"
+            placeholderTextColor={colors.placeholder}
             value={lastName}
             onChangeText={setLastName}
           />
         </View>
 
-        <Text style={styles.label}>DNI</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="id-card" size={18} color={colors.border} style={styles.icon} />
+          <Feather name="credit-card" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el DNI"
-            placeholderTextColor={colors.border}
+            placeholder="DNI"
+            placeholderTextColor={colors.placeholder}
             value={dni}
             onChangeText={setDni}
             keyboardType="numeric"
           />
         </View>
 
-        <Text style={styles.label}>Cargo</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="briefcase" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="briefcase" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el cargo"
-            placeholderTextColor={colors.border}
+            placeholder="Cargo"
+            placeholderTextColor={colors.placeholder}
             value={position}
             onChangeText={setPosition}
           />
@@ -117,36 +113,35 @@ const getStyles = (colors) => StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+    padding: 24,
   },
   formContainer: {
-    padding: 20,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 24,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
+    marginBottom: 24,
     textAlign: 'center',
-    color: colors.text,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 15,
-    marginBottom: 5,
     color: colors.text,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: colors.background, // Slightly different background for inputs
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.border,
     height: 50,
+    marginBottom: 16,
   },
   icon: {
-    marginRight: 10,
+    color: colors.text,
+    opacity: 0.6,
+    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -156,15 +151,16 @@ const getStyles = (colors) => StyleSheet.create({
   },
   button: {
     backgroundColor: colors.primary,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 8,
-    marginTop: 30,
+    marginTop: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 50,
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
