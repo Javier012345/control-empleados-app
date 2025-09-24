@@ -68,13 +68,15 @@ const handleLogin = async () => {
 };
 // ...existing code...
 
+ // ...existing code...
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/Nuevas Energias.jpeg')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Iniciar sesión</Text>
       <Text style={styles.description}>Bienvenido. Ingresa tus credenciales para continuar.</Text>
 
-      {/* <Text style={styles.label}>Correo</Text> */}
+      {/* Etiqueta para el correo */}
+      <Text style={styles.label}>Email</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="envelope" size={20} color={colors.text} style={styles.icon} />
         <TextInput
@@ -88,7 +90,8 @@ const handleLogin = async () => {
         />
       </View>
 
-      {/* <Text style={styles.label}>Contraseña</Text> */}
+      {/* Etiqueta para la contraseña */}
+      <Text style={styles.label}>Contraseña</Text>
       <View style={styles.inputContainer}>
         <FontAwesome name="lock" size={20} color={colors.text} style={styles.icon} />
         <TextInput
@@ -130,11 +133,8 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   logo: {
-    width: 140,
-    height: 140,
-    borderRadius: 70, // Hace la imagen circular
-    borderWidth: 2,
-    borderColor: colors.border,
+    width: 220,
+    height: 220,
     marginBottom: 30,
   },
   title: {
