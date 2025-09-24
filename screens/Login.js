@@ -80,70 +80,72 @@ export default function Login({ navigation }) {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
-      <Text style={styles.title}>Bienvenido de Vuelta</Text>
-      <Text style={styles.description}>Inicia sesión para acceder a tu panel.</Text>
+  // ...existing code...
+return (
+  <View style={styles.container}>
+    <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
+    <Text style={styles.title}>Iniciar Sesión</Text>
+    <Text style={styles.description}>Ingresa tus credenciales para acceder a tu cuenta.</Text>
 
-      <View style={styles.inputWrapper}>
-        <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
-          <Feather name="mail" size={20} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="ejemplo@email.com"
-            placeholderTextColor={colors.placeholder}
-            value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              validateEmail(text);
-            }}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-        {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-      </View>
+    {/* Etiqueta Email */}
+    <Text style={styles.label}>Email</Text>
+    <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
+      <Feather name="mail" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="ejemplo@email.com"
+        placeholderTextColor={colors.placeholder}
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          validateEmail(text);
+        }}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+    </View>
+    {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-      <View style={styles.inputWrapper}>
-        <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
-          <Feather name="lock" size={20} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            placeholderTextColor={colors.placeholder}
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              validatePassword(text);
-            }}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
-          </TouchableOpacity>
-        </View>
-        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-      </View>
-
-      {generalError ? <Text style={styles.generalErrorText}>{generalError}</Text> : null}
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <Text style={styles.buttonText}>Iniciar Sesión</Text>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.signUpText}>
-          ¿No tienes una cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
-        </Text>
+    {/* Etiqueta Contraseña */}
+    <Text style={styles.label}>Contraseña</Text>
+    <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
+      <Feather name="lock" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        placeholderTextColor={colors.placeholder}
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          validatePassword(text);
+        }}
+        secureTextEntry={!showPassword}
+      />
+      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+        <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
       </TouchableOpacity>
     </View>
-  );
-}
+    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+    {generalError ? <Text style={styles.generalErrorText}>{generalError}</Text> : null}
+
+    <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      {loading ? (
+        <ActivityIndicator color="#ffffff" />
+      ) : (
+        <Text style={styles.buttonText}>Iniciar Sesión</Text>
+      )}
+    </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+      <Text style={styles.signUpText}>
+        ¿No tienes una cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
+      </Text>
+    </TouchableOpacity>
+  </View>
+);
+};
+
 
 const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
@@ -235,5 +237,13 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   signUpLink: {
     color: colors.primary,
     fontWeight: '600',
+  },
+  label: {
+  alignSelf: 'flex-start',
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginBottom: 5,
+  color: colors.text,
+  marginLeft: 4,
   },
 });

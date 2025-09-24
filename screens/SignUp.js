@@ -96,102 +96,102 @@ export default function SignUp({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Crear una Cuenta</Text>
-        <Text style={styles.description}>Completa tus datos para empezar.</Text>
+<KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
+  <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
+    <Text style={styles.title}>Registro</Text>
+    <Text style={styles.description}>Crea una cuenta para empezar a utilizar la aplicación.</Text>
 
-        <View style={styles.inputWrapper}>
-          <View style={[styles.inputContainer, fullNameError ? styles.inputError : {}]}>
-            <Feather name="user" size={20} style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Nombre Completo"
-              placeholderTextColor={colors.placeholder}
-              value={fullName}
-              onChangeText={setFullName}
-              onBlur={() => validateFullName(fullName)}
-            />
-          </View>
-          {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
-        </View>
+    {/* Nombre completo */}
+    <Text style={styles.label}>Nombre completo</Text>
+    <View style={[styles.inputContainer, fullNameError ? styles.inputError : {}]}>
+      <Feather name="user" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="Nombre Completo"
+        placeholderTextColor={colors.placeholder}
+        value={fullName}
+        onChangeText={setFullName}
+        onBlur={() => validateFullName(fullName)}
+      />
+    </View>
+    {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
 
-        <View style={styles.inputWrapper}>
-          <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
-            <Feather name="mail" size={20} style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              placeholder="ejemplo@email.com"
-              placeholderTextColor={colors.placeholder}
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => validateEmail(email)}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
-        </View>
+    {/* Email */}
+    <Text style={styles.label}>Email</Text>
+    <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
+      <Feather name="mail" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="ejemplo@email.com"
+        placeholderTextColor={colors.placeholder}
+        value={email}
+        onChangeText={setEmail}
+        onBlur={() => validateEmail(email)}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+    </View>
+    {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
-        <View style={styles.inputWrapper}>
-          <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
-            <Feather name="lock" size={20} style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Contraseña"
-              placeholderTextColor={colors.placeholder}
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                validatePassword(text);
-                if (confirmPassword) validateConfirmPassword(confirmPassword);
-              }}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
-            </TouchableOpacity>
-          </View>
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-        </View>
+    {/* Contraseña */}
+    <Text style={styles.label}>Contraseña</Text>
+    <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
+      <Feather name="lock" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        placeholderTextColor={colors.placeholder}
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          validatePassword(text);
+          if (confirmPassword) validateConfirmPassword(confirmPassword);
+        }}
+        secureTextEntry={!showPassword}
+      />
+      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+        <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
+      </TouchableOpacity>
+    </View>
+    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-        <View style={styles.inputWrapper}>
-          <View style={[styles.inputContainer, confirmPasswordError ? styles.inputError : {}]}>
-            <Feather name="lock" size={20} style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirmar Contraseña"
-              placeholderTextColor={colors.placeholder}
-              value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                validateConfirmPassword(text);
-              }}
-              secureTextEntry={!showConfirmPassword}
-            />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
-            </TouchableOpacity>
-          </View>
-          {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
-        </View>
+    {/* Confirmar contraseña */}
+    <Text style={styles.label}>Confirmar contraseña</Text>
+    <View style={[styles.inputContainer, confirmPasswordError ? styles.inputError : {}]}>
+      <Feather name="lock" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="Confirmar Contraseña"
+        placeholderTextColor={colors.placeholder}
+        value={confirmPassword}
+        onChangeText={(text) => {
+          setConfirmPassword(text);
+          validateConfirmPassword(text);
+        }}
+        secureTextEntry={!showConfirmPassword}
+      />
+      <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+        <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
+      </TouchableOpacity>
+    </View>
+    {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.buttonText}>Registrarse</Text>
-          )}
-        </TouchableOpacity>
+    <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+      {loading ? (
+        <ActivityIndicator color="#ffffff" />
+      ) : (
+        <Text style={styles.buttonText}>Registrarse</Text>
+      )}
+    </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.signInText}>
-            ¿Ya tienes una cuenta? <Text style={styles.signInLink}>Inicia Sesión</Text>
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+      <Text style={styles.signInText}>
+        ¿Ya tienes una cuenta? <Text style={styles.signInLink}>Inicia Sesión</Text>
+      </Text>
+    </TouchableOpacity>
+  </ScrollView>
+</KeyboardAvoidingView>
   );
 }
 
@@ -284,4 +284,12 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  label: {
+  alignSelf: 'flex-start',
+  fontSize: 16,
+  fontWeight: 'bold',
+  marginBottom: 5,
+  color: colors.text,
+  marginLeft: 4,
+},
 });
