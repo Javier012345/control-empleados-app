@@ -1,49 +1,36 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
-import { db, auth } from '../../src/config/firebaseConfig'; // Importar 'auth'
+import { db } from '../../src/config/firebaseConfig';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
 
-const EmployeeItem = ({ item, navigation, colors }) => {
+const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const styles = getStyles(colors);
 
   const handleDelete = () => {
-    // Función que realiza el borrado
     const performDelete = async () => {
       try {
         await deleteDoc(doc(db, "employees", item.id));
         Alert.alert("Éxito", `El empleado ${item.firstName} ${item.lastName} ha sido eliminado.`);
       } catch (error) {
         console.error("Error al eliminar el empleado: ", error);
-        Alert.alert("Error", "No se pudo eliminar el empleado. Inténtalo de nuevo.");
-      } finally {
-        setMenuVisible(false);
+        Alert.alert("Error", "No se pudo eliminar el empleado.");
       }
     };
 
-    // Lógica de confirmación diferente para web y nativo
-    if (Platform.OS === 'web') {
-      if (window.confirm(`¿Estás seguro de que quieres eliminar a ${item.firstName} ${item.lastName}?`)) {
-        performDelete();
-      } else {
-        setMenuVisible(false); // Si cancela, solo cierra el menú
-      }
-    } else {
-      // La alerta nativa para iOS/Android
-      Alert.alert(
-        "Eliminar Empleado",
-        `¿Estás seguro de que quieres eliminar a ${item.firstName} ${item.lastName}?`,
-        [
-          { text: "Cancelar", style: "cancel", onPress: () => setMenuVisible(false) },
-          { text: "Eliminar", style: "destructive", onPress: performDelete },
-        ]
-      );
-    }
+    Alert.alert(
+      "Eliminar Empleado",
+      `¿Estás seguro de que quieres eliminar a ${item.firstName} ${item.lastName}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Eliminar", style: "destructive", onPress: performDelete },
+      ]
+    );
   };
 
-  const statusStyle = item.status === 'Activo' ? styles.statusActive : styles.statusInactive;
+  const statusStyle = [styles.statusBadge, item.status === 'Activo' ? styles.statusActive : styles.statusInactive];
+  const statusTextStyle = [styles.statusText, item.status === 'Activo' ? styles.statusTextActive : styles.statusTextInactive];
 
   return (
     <View style={styles.itemContainer}>
@@ -53,58 +40,64 @@ const EmployeeItem = ({ item, navigation, colors }) => {
           <Text style={styles.name}>{`${item.firstName} ${item.lastName}`}</Text>
           <Text style={styles.position}>{item.position}</Text>
         </View>
-        <TouchableOpacity onPress={() => setMenuVisible(!menuVisible)} style={styles.moreButton}>
-          <FontAwesome name="ellipsis-h" size={20} color="#6c757d" />
+        <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.moreButton}>
+          <Feather name="more-horizontal" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
-
       <View style={styles.itemBody}>
         <Text style={styles.detailText}><Text style={styles.detailLabel}>DNI:</Text> {item.dni}</Text>
-        <Text style={styles.detailText}><Text style={styles.detailLabel}>Estado:</Text> <Text style={statusStyle}>{item.status}</Text></Text>
+        <View style={statusStyle}>
+          <Text style={statusTextStyle}>{item.status}</Text>
+        </View>
       </View>
 
-      {menuVisible && (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={menuVisible}
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenuVisible(false)} />
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => { navigation.navigate('VerEmpleado', { employeeId: item.id }); setMenuVisible(false); }}>
-            <FontAwesome name="eye" size={16} color="#007bff" />
-            <Text style={[styles.actionButtonText, { color: '#007bff' }]}>Ver Perfil</Text>
+          <TouchableOpacity style={styles.actionButton} onPress={() => { setMenuVisible(false); navigation.navigate('VerEmpleado', { employeeId: item.id }); }}>
+            <Feather name="eye" size={20} style={styles.actionIcon} />
+            <Text style={styles.actionButtonText}>Ver Perfil</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => { navigation.navigate('EditarEmpleado', { employee: item }); setMenuVisible(false); }}>
-            <FontAwesome name="pencil" size={16} color="#ffc107" />
-            <Text style={[styles.actionButtonText, { color: '#ffc107' }]}>Editar</Text>
+          <TouchableOpacity style={styles.actionButton} onPress={() => { setMenuVisible(false); navigation.navigate('EditarEmpleado', { employee: item }); }}>
+            <Feather name="edit-2" size={20} style={styles.actionIcon} />
+            <Text style={styles.actionButtonText}>Editar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-            <FontAwesome name="trash" size={16} color="#dc3545" />
-            <Text style={[styles.actionButtonText, { color: '#dc3545' }]}>Eliminar</Text>
+          <TouchableOpacity style={[styles.actionButton, { borderBottomWidth: 0 }]} onPress={() => { setMenuVisible(false); handleDelete(); }}>
+            <Feather name="trash-2" size={20} style={[styles.actionIcon, { color: colors.primary }]} />
+            <Text style={[styles.actionButtonText, { color: colors.primary }]}>Eliminar</Text>
           </TouchableOpacity>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
 
-export default function Empleados({ navigation }) {
+export default function Empleados() {
   const [searchQuery, setSearchQuery] = useState('');
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const navigation = useNavigation();
+  const { dark: isDarkMode, colors } = useTheme();
+  const styles = getStyles(isDarkMode, colors);
 
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
       const q = query(collection(db, "employees"), orderBy("createdAt", "desc"));
-  
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const employeesData = [];
-        querySnapshot.forEach((doc) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const employeesData = snapshot.docs.map(doc => {
           const data = doc.data();
           const initials = `${data.firstName?.[0] || ''}${data.lastName?.[0] || ''}`.toUpperCase();
-          employeesData.push({ 
+          return { 
             id: doc.id, 
             ...data,
-            avatar: `https://placehold.co/100x100/FFC107/1F2937?text=${initials}`
-          });
+            avatar: `https://placehold.co/100x100/D9232D/FFFFFF?text=${initials}`
+          };
         });
         setEmployees(employeesData);
         setLoading(false);
@@ -112,41 +105,41 @@ export default function Empleados({ navigation }) {
         console.error("Error fetching employees: ", error);
         setLoading(false);
       });
-  
       return () => unsubscribe();
     }, [])
   );
 
   const filteredEmployees = employees.filter(employee =>
     `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.dni.includes(searchQuery)
+    employee.dni?.includes(searchQuery)
   );
 
   if (loading) {
-    return <View style={styles.centerContainer}><ActivityIndicator size="large" color="#dc3545" /></View>;
+    return <View style={styles.centerContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
 
   return (
     <View style={styles.container}>
       <FlatList
         data={filteredEmployees}
-        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} colors={colors} />}
+        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} styles={styles} isDarkMode={isDarkMode} colors={colors} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={<Text style={styles.emptyListText}>No se encontraron empleados.</Text>}
         ListHeaderComponent={
           <View style={styles.header}>
             <View style={styles.searchContainer}>
-              <FontAwesome name="search" size={18} color={colors.border} style={styles.searchIcon} />
+              <Feather name="search" size={20} color={colors.placeholder} />
               <TextInput
                 placeholder="Buscar por nombre o DNI..."
+                placeholderTextColor={colors.placeholder}
                 style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
             </View>
             <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('AgregarEmpleado')}>
-              <FontAwesome name="plus" size={16} color="#fff" />
+              <Feather name="plus" size={20} color="#fff" />
               <Text style={styles.registerButtonText}>Registrar Empleado</Text>
             </TouchableOpacity>
           </View>
@@ -156,7 +149,7 @@ export default function Empleados({ navigation }) {
   );
 }
 
-const getStyles = (colors) => StyleSheet.create({
+const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -168,22 +161,19 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   listContainer: {
-    paddingHorizontal: 15,
-    paddingBottom: 20, // Espacio al final de la lista
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   itemContainer: {
     backgroundColor: colors.card,
     padding: 16,
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 12,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.20,
-    shadowRadius: 1.41,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   itemHeader: {
     flexDirection: 'row',
@@ -194,66 +184,96 @@ const getStyles = (colors) => StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    marginRight: 15,
+    marginRight: 16,
   },
   infoContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 17,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text,
   },
   position: {
     fontSize: 14,
     color: colors.text,
     opacity: 0.7,
+    marginTop: 2,
   },
   moreButton: {
     padding: 8,
   },
   itemBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    paddingTop: 12,
   },
   detailText: {
     fontSize: 14,
     color: colors.text,
-    marginBottom: 4,
   },
   detailLabel: {
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: colors.text,
+    opacity: 0.7,
+  },
+  statusBadge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   statusActive: {
-    color: '#28a745',
-    fontWeight: 'bold',
+    backgroundColor: isDarkMode ? 'rgba(22, 163, 74, 0.2)' : '#D1FAE5',
   },
   statusInactive: {
-    color: '#ffc107',
-    fontWeight: 'bold',
+    backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  statusTextActive: {
+    color: isDarkMode ? '#4ADE80' : '#065F46',
+  },
+  statusTextInactive: {
+    color: isDarkMode ? '#FBBF24' : '#92400E',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: 12,
-    paddingTop: 8,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: colors.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    paddingBottom: 30, // Safe area for home indicator
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  actionIcon: {
+    marginRight: 16,
+    color: colors.text,
+    opacity: 0.7,
   },
   actionButtonText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    color: colors.text,
   },
   header: {
-    paddingTop: 20, // Espacio arriba de la barra de búsqueda
-    paddingBottom: 10, // Espacio debajo del botón
+    paddingTop: 20,
+    paddingBottom: 10,
     backgroundColor: colors.background,
   },
   searchContainer: {
@@ -261,40 +281,30 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 15,
-  },
-  searchIcon: {
-    marginRight: 8,
+    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
-    height: 40,
+    height: 44,
     fontSize: 16,
     color: colors.text,
+    marginLeft: 8,
   },
   registerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
   },
   registerButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginLeft: 8,
   },
   emptyListText: {
@@ -302,6 +312,6 @@ const getStyles = (colors) => StyleSheet.create({
     marginTop: 50,
     fontSize: 16,
     color: colors.text,
-    opacity: 0.6,
+    opacity: 0.7,
   },
 });

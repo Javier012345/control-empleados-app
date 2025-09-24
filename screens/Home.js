@@ -1,18 +1,27 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
-import { collection, query, where, Timestamp, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../src/config/firebaseConfig';
 
-// Componente reutilizable para las tarjetas de estadísticas
 const StatCard = ({ icon, title, value, color, styles }) => (
-  <View style={[styles.card, { borderLeftColor: color, backgroundColor: styles.card.backgroundColor }]}>
-    <FontAwesome name={icon} size={32} color={color} style={styles.cardIcon} />
-    <View>
-      <Text style={[styles.cardValue, { color: styles.cardValue.color }]}>{value}</Text>
-      <Text style={[styles.cardTitle, { color: styles.cardTitle.color }]}>{title}</Text>
+  <View style={styles.card}>
+    <View style={styles.cardHeader}>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Feather name={icon} size={22} color={color} />
     </View>
+    <Text style={styles.cardValue}>{value}</Text>
+  </View>
+);
+
+const ActivityItem = ({ icon, text, time, iconColor, bgColor, styles }) => (
+  <View style={styles.activityItem}>
+    <View style={[styles.activityIconContainer, { backgroundColor: bgColor }]}>
+      <Feather name={icon} size={20} color={iconColor} />
+    </View>
+    <Text style={styles.activityText} numberOfLines={2}>{text}</Text>
+    <Text style={styles.activityTime}>{time}</Text>
   </View>
 );
 
@@ -25,11 +34,12 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { colors } = useTheme();
-  // Creamos los estilos dinámicamente basados en el tema
-  const styles = getStyles(colors);
+  
+  const { dark: isDarkMode, colors } = useTheme();
+  const styles = getStyles(isDarkMode, colors);
 
-  const fetchDataAndSetupListeners = useCallback(() => {
+  const fetchData = useCallback(() => {
+    setLoading(true);
     const employeesCollection = collection(db, 'employees');
     const sanctionsCollection = collection(db, 'sanciones');
     const attendancesCollection = collection(db, 'asistencias');
@@ -38,124 +48,54 @@ export default function Home() {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
 
-    const handleError = (error) => {
-      console.error("Error con el listener de Firestore: ", error);
-      setLoading(false);
-    };
+    const unsubscribers = [
+      onSnapshot(employeesCollection, snapshot => setStats(prev => ({ ...prev, totalEmployees: snapshot.size }))),
+      onSnapshot(query(employeesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, newHires: snapshot.size }))),
+      onSnapshot(query(sanctionsCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, monthlySanctions: snapshot.size }))),
+      onSnapshot(query(attendancesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfDay))), snapshot => setStats(prev => ({ ...prev, todayAttendances: snapshot.size }))),
+    ];
 
-    // Listeners
-    const unsubEmployees = onSnapshot(employeesCollection, 
-      (snapshot) => setStats(prev => ({ ...prev, totalEmployees: snapshot.size })), handleError);
+    setLoading(false);
+    setRefreshing(false);
 
-    const newHiresQuery = query(employeesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth)));
-    const unsubNewHires = onSnapshot(newHiresQuery, 
-      (snapshot) => setStats(prev => ({ ...prev, newHires: snapshot.size })), handleError);
-
-    const monthlySanctionsQuery = query(sanctionsCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth)));
-    const unsubSanctions = onSnapshot(monthlySanctionsQuery, 
-      (snapshot) => setStats(prev => ({ ...prev, monthlySanctions: snapshot.size })), handleError);
-
-    const todayAttendancesQuery = query(attendancesCollection, where('createdAt', '>=', startOfDay), where('createdAt', '<=', endOfDay));
-    const unsubAttendances = onSnapshot(todayAttendancesQuery, 
-      (snapshot) => setStats(prev => ({ ...prev, todayAttendances: snapshot.size })), handleError);
-
-    // Ocultamos el loading después de que todos los listeners se hayan establecido
-    // y los datos iniciales (probablemente de caché) se hayan cargado.
-    // Para asegurar que vemos algo, esperamos un momento.
-    // Una mejor aproximación es usar Promise.all con getDocs si el FOUC (flash of unstyled content) es un problema.
-    // Por ahora, esto soluciona la pantalla en blanco.
-    if (loading) {
-      setLoading(false);
-    }
-    if (refreshing) {
-      setRefreshing(false);
-    }
-
-    return () => {
-      unsubEmployees();
-      unsubNewHires();
-      unsubSanctions();
-      unsubAttendances();
-    };
-  }, [loading, refreshing]);
-
-  // useFocusEffect para recargar los listeners si volvemos a la pantalla.
-  // Esto es más robusto que useEffect solo.
-  useFocusEffect(fetchDataAndSetupListeners);
-
-  // La función de refresco manual seguirá funcionando como antes, pero ahora es menos necesaria
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    // La lógica de fetchDataAndSetupListeners se encargará de poner refreshing a false.
+    return () => unsubscribers.forEach(unsub => unsub());
   }, []);
 
-  if (loading) {
+  useFocusEffect(fetchData);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
+
+  if (loading && !refreshing) {
     return <View style={styles.centerContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
   }
-
-  // Ya no necesitamos la función fetchDashboardData ni el useFocusEffect
-  /*
-  const fetchDashboardData = async () => {
-    try {
-      // --- 1. Total de Empleados ---
-      const employeesCollection = collection(db, 'employees');
-      const employeesSnapshot = await getDocs(employeesCollection);
-      const totalEmployees = employeesSnapshot.size;
-
-    } catch (error) {
-      console.error("Error fetching dashboard data: ", error);
-      // Aquí podrías mostrar una alerta al usuario
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // useFocusEffect se ejecuta cada vez que la pantalla entra en foco
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      fetchDashboardData();
-    }, [])
-  );
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchDashboardData();
-  }, []);
-
-  if (loading && !refreshing) { ... }
-  */
 
   return (
     <ScrollView 
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
     >
       <View style={styles.grid}>
-        <StatCard icon="users" title="Total de Empleados" value={stats.totalEmployees} color="#17a2b8" styles={styles} />
-        <StatCard icon="user-plus" title="Nuevas Contrataciones" value={stats.newHires} color="#28a745" styles={styles} />
-        <StatCard icon="exclamation-triangle" title="Sanciones del Mes" value={stats.monthlySanctions} color="#ffc107" styles={styles} />
-        <StatCard icon="check-square-o" title="Asistencias de Hoy" value={stats.todayAttendances} color="#007bff" styles={styles} />
+        <StatCard icon="users" title="Total Empleados" value={stats.totalEmployees} color={colors.primary} styles={styles} />
+        <StatCard icon="user-check" title="Asistencia Hoy" value={`${stats.todayAttendances} / ${stats.totalEmployees}`} color="#16A34A" styles={styles} />
+        <StatCard icon="shield" title="Sanciones Mes" value={stats.monthlySanctions} color="#F59E0B" styles={styles} />
+        <StatCard icon="user-plus" title="Nuevas Contrataciones" value={stats.newHires} color="#3B82F6" styles={styles} />
       </View>
       
-      {/* Aquí puedes agregar más componentes para tu dashboard */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Actividad Reciente</Text>
-        {/* Por ejemplo, una lista de las últimas contrataciones o incidentes */}
-        <Text style={styles.placeholderText}>Próximamente...</Text>
+        <ActivityItem icon="log-in" text="Ana Torres marcó su asistencia a las 09:02 AM." time="Hace 5 min" iconColor="#16A34A" bgColor={isDarkMode ? 'rgba(22, 163, 74, 0.2)' : '#D1FAE5'} styles={styles} />
+        <ActivityItem icon="alert-triangle" text="Se reportó un incidente para Carlos Vega." time="Hace 1 hora" iconColor="#F59E0B" bgColor={isDarkMode ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7'} styles={styles} />
+        <ActivityItem icon="user-plus" text="Nuevo empleado Laura Méndez ha sido añadido." time="Hace 3 horas" iconColor="#3B82F6" bgColor={isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE'} styles={styles} />
       </View>
     </ScrollView>
   );
 }
 
-// Función que genera los estilos
-const getStyles = (colors) => StyleSheet.create({
+const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -169,53 +109,74 @@ const getStyles = (colors) => StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    padding: 10,
+    justifyContent: 'space-between',
+    padding: 16,
   },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 8,
-    padding: 15,
-    width: '46%', // Para que quepan dos por fila con un pequeño espacio
-    marginBottom: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderLeftWidth: 5,
+    borderRadius: 12,
+    padding: 16,
+    width: '48%',
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.18,
-    shadowRadius: 1.00,
-    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  cardIcon: {
-    marginRight: 15,
-  },
-  cardValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   cardTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.text,
+    opacity: 0.7,
     fontWeight: '500',
+  },
+  cardValue: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: colors.text,
   },
   section: {
     backgroundColor: colors.card,
-    marginHorizontal: 10,
-    borderRadius: 8,
-    padding: 20,
-    marginTop: 10,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: '600',
+    marginBottom: 12,
     color: colors.text,
   },
-  placeholderText: {
-    textAlign: 'center',
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  activityIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activityText: {
+    flex: 1,
+    fontSize: 14,
     color: colors.text,
-    paddingVertical: 20,
-  }
+    opacity: 0.9,
+  },
+  activityTime: {
+    fontSize: 12,
+    color: colors.text,
+    opacity: 0.6,
+    marginLeft: 8,
+  },
 });
