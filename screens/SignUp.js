@@ -112,7 +112,7 @@ export default function SignUp({ navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.scroll}>
     <ScrollView contentContainerStyle={styles.container}>
-      <Image source={require('../assets/Nuevas Energias.jpeg')} style={styles.logo} resizeMode="contain" />
+      <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Regístrate</Text>
       <Text style={styles.description}>Crea tu cuenta para acceder a todas las funcionalidades.</Text>
 
@@ -219,14 +219,14 @@ const getStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+
   logo: {
-    width: 140,
-    height: 140,
-    borderRadius: 70, // Hace la imagen circular
-    borderWidth: 2,
-    borderColor: colors.border,
+    width: 220,
+    height: 220,
     marginBottom: 30,
+    
   },
+
   title: {
     fontSize: 28,
     fontWeight: 'bold',
