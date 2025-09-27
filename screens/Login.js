@@ -96,9 +96,9 @@ return (
         placeholder="ejemplo@email.com"
         placeholderTextColor={colors.placeholder}
         value={email}
-        onChangeText={(text) => {
+        onChangeText={text => {
           setEmail(text);
-          validateEmail(text);
+          if (emailError) setEmailError('');
         }}
         keyboardType="email-address"
         autoCapitalize="none"
@@ -112,12 +112,12 @@ return (
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Contraseña"
+        placeholder="Ej: Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={password}
-        onChangeText={(text) => {
+        onChangeText={text => {
           setPassword(text);
-          validatePassword(text);
+          if (passwordError) setPasswordError('');
         }}
         secureTextEntry={!showPassword}
       />
@@ -206,7 +206,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     marginTop: 16,
-    width: '100%',
+    width: '50%',
     alignItems: 'center',
     justifyContent: 'center',
     height: 50,
@@ -217,13 +217,13 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     fontWeight: '600',
   },
   errorText: {
-    color: colors.primary,
+    color: colors.text,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
   },
   generalErrorText: {
-    color: colors.primary,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 10,
     fontSize: 14,

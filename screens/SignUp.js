@@ -12,6 +12,7 @@ export default function SignUp({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
+  const [generalError, setGeneralError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,45 +28,61 @@ export default function SignUp({ navigation }) {
   const validateFullName = (name) => {
     if (!name.trim()) {
       setFullNameError('El nombre completo es obligatorio.');
+      return false;
     } else {
       setFullNameError('');
+      return true;
     }
   };
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!email.trim()) {
+      setEmailError('El correo es obligatorio.');
+      return false;
+    } else if (!emailRegex.test(email)) {
       setEmailError('El formato del correo no es válido.');
+      return false;
     } else {
       setEmailError('');
+      return true;
     }
   };
 
   const validatePassword = (password) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!passwordRegex.test(password)) {
+    if (!password) {
+      setPasswordError('La contraseña es obligatoria.');
+      return false;
+    } else if (!passwordRegex.test(password)) {
       setPasswordError('Debe tener 6+ caracteres, mayúscula, minúscula y número.');
+      return false;
     } else {
       setPasswordError('');
+      return true;
     }
   };
 
   const validateConfirmPassword = (confirmPass) => {
-    if (password !== confirmPass) {
+    if (!confirmPass) {
+      setConfirmPasswordError('Debes confirmar la contraseña.');
+      return false;
+    } else if (password !== confirmPass) {
       setConfirmPasswordError('Las contraseñas no coinciden.');
+      return false;
     } else {
       setConfirmPasswordError('');
+      return true;
     }
   };
 
   const handleSignUp = async () => {
-    // Run all validations before submitting
-    validateFullName(fullName);
-    validateEmail(email);
-    validatePassword(password);
-    validateConfirmPassword(confirmPassword);
+    const isFullNameValid = validateFullName(fullName);
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
 
-    if (fullNameError || emailError || passwordError || confirmPasswordError || !fullName || !email || !password || !confirmPassword) {
+    if (!isFullNameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
       return;
     }
 
@@ -86,10 +103,13 @@ export default function SignUp({ navigation }) {
       // Navigation to Home is handled by the auth state listener
     } catch (error) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "El correo electrónico ya está en uso.";
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          setEmailError("El correo electrónico ya está en uso.");
+          break;
+        default:
+          setGeneralError(errorMessage);
       }
-      setFullNameError(errorMessage); // Displaying general error
     } finally {
       setLoading(false);
     }
@@ -103,16 +123,18 @@ export default function SignUp({ navigation }) {
     <Text style={styles.description}>Crea una cuenta para empezar a utilizar la aplicación.</Text>
 
     {/* Nombre completo */}
-    <Text style={styles.label}>Nombre completo</Text>
+    <Text style={styles.label}>Nombre</Text>
     <View style={[styles.inputContainer, fullNameError ? styles.inputError : {}]}>
       <Feather name="user" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Nombre Completo"
+        placeholder="Nombre"
         placeholderTextColor={colors.placeholder}
         value={fullName}
-        onChangeText={setFullName}
-        onBlur={() => validateFullName(fullName)}
+        onChangeText={text => {
+          setFullName(text);
+          if (fullNameError) setFullNameError('');
+        }}
       />
     </View>
     {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
@@ -126,8 +148,10 @@ export default function SignUp({ navigation }) {
         placeholder="ejemplo@email.com"
         placeholderTextColor={colors.placeholder}
         value={email}
-        onChangeText={setEmail}
-        onBlur={() => validateEmail(email)}
+        onChangeText={text => {
+          setEmail(text);
+          if (emailError) setEmailError('');
+        }}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -140,13 +164,12 @@ export default function SignUp({ navigation }) {
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Contraseña"
+        placeholder="Ej: Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={password}
-        onChangeText={(text) => {
+        onChangeText={text => {
           setPassword(text);
-          validatePassword(text);
-          if (confirmPassword) validateConfirmPassword(confirmPassword);
+          if (passwordError) setPasswordError('');
         }}
         secureTextEntry={!showPassword}
       />
@@ -162,12 +185,12 @@ export default function SignUp({ navigation }) {
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Confirmar Contraseña"
+        placeholder="Ej: Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={confirmPassword}
-        onChangeText={(text) => {
+        onChangeText={text => {
           setConfirmPassword(text);
-          validateConfirmPassword(text);
+          if (confirmPasswordError) setConfirmPasswordError('');
         }}
         secureTextEntry={!showConfirmPassword}
       />
@@ -176,6 +199,7 @@ export default function SignUp({ navigation }) {
       </TouchableOpacity>
     </View>
     {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+    {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
 
     <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
       {loading ? (
@@ -258,7 +282,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     marginTop: 16,
-    width: '100%',
+    width: '50%',
     alignItems: 'center',
     justifyContent: 'center',
     height: 50,
@@ -269,7 +293,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     fontWeight: '600',
   },
   errorText: {
-    color: colors.primary,
+    color: colors.text,
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
