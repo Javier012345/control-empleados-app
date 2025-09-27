@@ -150,15 +150,15 @@ return (
 const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    // justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
     backgroundColor: colors.background,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 40,
+    width: 250,
+    height: 250,
+    marginBottom: 10,
   },
   title: {
     fontSize: 28,
@@ -243,6 +243,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   fontSize: 16,
   fontWeight: 'bold',
   marginBottom: 5,
+  marginTop: 15,
   color: colors.text,
   marginLeft: 4,
   },

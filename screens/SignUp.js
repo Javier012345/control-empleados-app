@@ -226,14 +226,15 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
+    // justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 32,
+    width: 250,
+    height: 250,
+    marginBottom: 0,
+    marginTop: -25,
   },
   title: {
     fontSize: 28,
@@ -313,6 +314,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   fontSize: 16,
   fontWeight: 'bold',
   marginBottom: 5,
+  marginTop: 15,
   color: colors.text,
   marginLeft: 4,
 },
