@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -14,10 +14,13 @@ export default function EditarEmpleado({ route, navigation }) {
   const [lastName, setLastName] = useState(employee.lastName);
   const [dni, setDni] = useState(employee.dni);
   const [position, setPosition] = useState(employee.position);
+  const [telefono, setTelefono] = useState(employee.telefono);
+  const [email, setEmail] = useState(employee.email);
+  const [direccion, setDireccion] = useState(employee.direccion);
   const [loading, setLoading] = useState(false);
 
   const handleUpdateEmployee = async () => {
-    if (!firstName || !lastName || !dni || !position) {
+    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion) {
       Alert.alert("Error", "Todos los campos son obligatorios.");
       return;
     }
@@ -31,10 +34,13 @@ export default function EditarEmpleado({ route, navigation }) {
         lastName: lastName,
         dni: dni,
         position: position,
+        telefono: telefono,
+        email: email,
+        direccion: direccion,
       });
 
       Alert.alert("Éxito", "Empleado actualizado correctamente.");
-      navigation.goBack();
+      navigation.navigate('Empleados');
 
     } catch (error) {
       console.error("Error updating document: ", error);
@@ -47,54 +53,85 @@ export default function EditarEmpleado({ route, navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Editar Datos</Text>
+        <Text style={styles.title}>Editar Datos del Empleado</Text>
 
-        <Text style={styles.label}>Nombre</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el nombre"
-            placeholderTextColor={colors.border}
+            placeholder="Nombre"
+            placeholderTextColor={colors.placeholder}
             value={firstName}
             onChangeText={setFirstName}
           />
         </View>
 
-        <Text style={styles.label}>Apellido</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="user" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el apellido"
-            placeholderTextColor={colors.border}
+            placeholder="Apellido"
+            placeholderTextColor={colors.placeholder}
             value={lastName}
             onChangeText={setLastName}
           />
         </View>
 
-        <Text style={styles.label}>DNI</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="id-card" size={18} color={colors.border} style={styles.icon} />
+          <Feather name="credit-card" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el DNI"
-            placeholderTextColor={colors.border}
+            placeholder="DNI"
+            placeholderTextColor={colors.placeholder}
             value={dni}
             onChangeText={setDni}
             keyboardType="numeric"
           />
         </View>
 
-        <Text style={styles.label}>Cargo</Text>
         <View style={styles.inputContainer}>
-          <FontAwesome name="briefcase" size={20} color={colors.border} style={styles.icon} />
+          <Feather name="briefcase" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
-            placeholder="Ingrese el cargo"
-            placeholderTextColor={colors.border}
+            placeholder="Cargo"
+            placeholderTextColor={colors.placeholder}
             value={position}
             onChangeText={setPosition}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="phone" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Teléfono"
+            placeholderTextColor={colors.placeholder}
+            value={telefono}
+            onChangeText={setTelefono}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="mail" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={colors.placeholder}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="map-pin" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Dirección"
+            placeholderTextColor={colors.placeholder}
+            value={direccion}
+            onChangeText={setDireccion}
           />
         </View>
 
@@ -111,42 +148,61 @@ export default function EditarEmpleado({ route, navigation }) {
 }
 
 const getStyles = (colors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContainer: { flexGrow: 1, justifyContent: 'center' },
-  formContainer: { padding: 20, },
-  title: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 20, 
-    textAlign: 'center', 
-    color: colors.text 
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  label: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    marginTop: 15, 
-    marginBottom: 5, 
-    color: colors.text 
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
   },
-  inputContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: colors.card, 
-    borderRadius: 8, 
-    paddingHorizontal: 10, 
-    borderWidth: 1, 
-    borderColor: colors.border, 
-    height: 50 
+  formContainer: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 24,
   },
-  icon: { marginRight: 10 },
-  input: { flex: 1, height: '100%', fontSize: 16, color: colors.text },
-  button: { 
-    backgroundColor: colors.primary, 
-    paddingVertical: 15, 
-    borderRadius: 8, 
-    marginTop: 30, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 24,
+    textAlign: 'center',
+    color: colors.text,
   },
-  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    height: 50,
+    marginBottom: 16,
+  },
+  icon: {
+    color: colors.text,
+    opacity: 0.6,
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: colors.text,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 50,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

@@ -46,7 +46,10 @@ const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
       </View>
       <View style={styles.itemBody}>
         <Text style={styles.detailText}><Text style={styles.detailLabel}>DNI:</Text> {item.dni}</Text>
-        <View style={statusStyle}>
+        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Teléfono:</Text> {item.telefono}</Text>
+        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Email:</Text> {item.email}</Text>
+        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Dirección:</Text> {item.direccion}</Text>
+        <View style={[statusStyle, {alignSelf: 'flex-start', marginTop: 8}]}>
           <Text style={statusTextStyle}>{item.status}</Text>
         </View>
       </View>
@@ -204,12 +207,10 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     padding: 8,
   },
   itemBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    alignItems: 'flex-start',
   },
   detailText: {
     fontSize: 14,

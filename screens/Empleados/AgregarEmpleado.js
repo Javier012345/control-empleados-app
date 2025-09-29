@@ -12,10 +12,13 @@ export default function AgregarEmpleado({ navigation }) {
   const [lastName, setLastName] = useState('');
   const [dni, setDni] = useState('');
   const [position, setPosition] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
+  const [direccion, setDireccion] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAddEmployee = async () => {
-    if (!firstName || !lastName || !dni || !position) {
+    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion) {
       Alert.alert("Error", "Todos los campos son obligatorios.");
       return;
     }
@@ -28,6 +31,9 @@ export default function AgregarEmpleado({ navigation }) {
         lastName: lastName,
         dni: dni,
         position: position,
+        telefono: telefono,
+        email: email,
+        direccion: direccion,
         status: 'Activo', // Estado por defecto
         createdAt: serverTimestamp(),
       });
@@ -90,6 +96,41 @@ export default function AgregarEmpleado({ navigation }) {
             placeholderTextColor={colors.placeholder}
             value={position}
             onChangeText={setPosition}
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="phone" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Teléfono"
+            placeholderTextColor={colors.placeholder}
+            value={telefono}
+            onChangeText={setTelefono}
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="mail" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={colors.placeholder}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Feather name="map-pin" size={20} style={styles.icon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Dirección"
+            placeholderTextColor={colors.placeholder}
+            value={direccion}
+            onChangeText={setDireccion}
           />
         </View>
 

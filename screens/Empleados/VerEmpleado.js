@@ -61,6 +61,18 @@ export default function VerEmpleado({ route }) {
           <Text style={styles.detailValue}>{employee.dni}</Text>
         </View>
         <View style={styles.detailItem}>
+          <Text style={styles.detailLabel}>Teléfono</Text>
+          <Text style={styles.detailValue}>{employee.telefono}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Text style={styles.detailLabel}>Email</Text>
+          <Text style={styles.detailValue}>{employee.email}</Text>
+        </View>
+        <View style={styles.detailItem}>
+          <Text style={styles.detailLabel}>Dirección</Text>
+          <Text style={styles.detailValue}>{employee.direccion}</Text>
+        </View>
+        <View style={styles.detailItem}>
           <Text style={styles.detailLabel}>Estado</Text>
           <Text style={[styles.detailValue, statusStyle]}>{employee.status}</Text>
         </View>
