@@ -145,7 +145,7 @@ export default function SignUp({ navigation }) {
       <Feather name="mail" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="ejemplo@email.com"
+        placeholder="ejemplo@gmail.com"
         placeholderTextColor={colors.placeholder}
         value={email}
         onChangeText={text => {
@@ -164,7 +164,7 @@ export default function SignUp({ navigation }) {
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Ej: Ejemplo123"
+        placeholder="Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={password}
         onChangeText={text => {
@@ -185,7 +185,7 @@ export default function SignUp({ navigation }) {
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Ej: Ejemplo123"
+        placeholder="Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={confirmPassword}
         onChangeText={text => {
