@@ -123,7 +123,7 @@ export default function SignUp({ navigation }) {
     <Text style={styles.description}>Crea una cuenta para empezar a utilizar la aplicación.</Text>
 
     {/* Nombre completo */}
-    <Text style={styles.label}>Nombre</Text>
+    <Text style={styles.label}>Nombre *</Text>
     <View style={[styles.inputContainer, fullNameError ? styles.inputError : {}]}>
       <Feather name="user" size={20} style={styles.icon} />
       <TextInput
@@ -140,7 +140,7 @@ export default function SignUp({ navigation }) {
     {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
 
     {/* Email */}
-    <Text style={styles.label}>Email</Text>
+    <Text style={styles.label}>Email *</Text>
     <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
       <Feather name="mail" size={20} style={styles.icon} />
       <TextInput
@@ -159,7 +159,7 @@ export default function SignUp({ navigation }) {
     {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
     {/* Contraseña */}
-    <Text style={styles.label}>Contraseña</Text>
+    <Text style={styles.label}>Contraseña *</Text>
     <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
@@ -180,7 +180,7 @@ export default function SignUp({ navigation }) {
     {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
     {/* Confirmar contraseña */}
-    <Text style={styles.label}>Confirmar contraseña</Text>
+    <Text style={styles.label}>Confirmar contraseña *</Text>
     <View style={[styles.inputContainer, confirmPasswordError ? styles.inputError : {}]}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
