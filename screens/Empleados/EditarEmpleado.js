@@ -39,8 +39,9 @@ export default function EditarEmpleado({ route, navigation }) {
         direccion: direccion,
       });
 
-      Alert.alert("Éxito", "Empleado actualizado correctamente.");
-      navigation.navigate('Empleados');
+      Alert.alert("Éxito", "Empleado actualizado correctamente.", [
+        { text: "OK", onPress: () => navigation.navigate('Empleados') }
+      ]);
 
     } catch (error) {
       console.error("Error updating document: ", error);
