@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
@@ -20,9 +21,50 @@ export default function AgregarEmpleado({ navigation }) {
   const [direccion, setDireccion] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const isValidEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handleAddEmployee = async () => {
-    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion) {
-      Alert.alert("Error", "Todos los campos son obligatorios.");
+    if (!firstName) {
+      Alert.alert("Campo requerido", "El nombre es obligatorio.");
+      return;
+    }
+    if (!lastName) {
+      Alert.alert("Campo requerido", "El apellido es obligatorio.");
+      return;
+    }
+    if (!dni) {
+      Alert.alert("Campo requerido", "El DNI es obligatorio.");
+      return;
+    }
+    if (!/^[0-9]+$/.test(dni)) {
+      Alert.alert("Dato inválido", "El DNI debe ser solo numérico.");
+      return;
+    }
+    if (!position) {
+      Alert.alert("Campo requerido", "El cargo es obligatorio.");
+      return;
+    }
+    if (!telefono) {
+      Alert.alert("Campo requerido", "El teléfono es obligatorio.");
+      return;
+    }
+    if (!/^[0-9]+$/.test(telefono)) {
+      Alert.alert("Dato inválido", "El teléfono debe ser solo numérico.");
+      return;
+    }
+    if (!email) {
+      Alert.alert("Campo requerido", "El email es obligatorio.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert("Dato inválido", "El email no es válido.");
+      return;
+    }
+    if (!direccion) {
+      Alert.alert("Campo requerido", "La dirección es obligatoria.");
       return;
     }
 
@@ -92,20 +134,26 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="DNI"
             placeholderTextColor={colors.placeholder}
             value={dni}
-            onChangeText={setDni}
+            onChangeText={text => setDni(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
+            maxLength={12}
           />
         </View>
 
         <View style={styles.inputContainer}>
           <Feather name="briefcase" size={20} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Cargo"
-            placeholderTextColor={colors.placeholder}
-            value={position}
-            onChangeText={setPosition}
-          />
+          <Picker
+            selectedValue={position}
+            style={[styles.input, { paddingLeft: 0 }]}
+            onValueChange={setPosition}
+            dropdownIconColor={colors.text}
+          >
+            <Picker.Item label="Seleccionar cargo..." value="" color={colors.placeholder} />
+            <Picker.Item label="Gerente" value="Gerente" />
+            <Picker.Item label="Secretaria" value="Secretaria" />
+            <Picker.Item label="Tecnico" value="Tecnico" />
+            <Picker.Item label="Obrero" value="Obrero" />
+          </Picker>
         </View>
 
         <View style={styles.inputContainer}>
@@ -115,8 +163,9 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="Teléfono"
             placeholderTextColor={colors.placeholder}
             value={telefono}
-            onChangeText={setTelefono}
-            keyboardType="phone-pad"
+            onChangeText={text => setTelefono(text.replace(/[^0-9]/g, ''))}
+            keyboardType="numeric"
+            maxLength={15}
           />
         </View>
 
@@ -129,6 +178,8 @@ export default function AgregarEmpleado({ navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
 
