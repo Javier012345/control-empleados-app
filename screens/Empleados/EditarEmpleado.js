@@ -25,30 +25,45 @@ export default function EditarEmpleado({ route, navigation }) {
       return;
     }
 
-    setLoading(true);
-    const employeeRef = doc(db, "employees", employee.id);
+    Alert.alert(
+      "Confirmar Edición",
+      "¿Estás seguro de que quieres guardar los cambios?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            setLoading(true);
+            const employeeRef = doc(db, "employees", employee.id);
 
-    try {
-      await updateDoc(employeeRef, {
-        firstName: firstName,
-        lastName: lastName,
-        dni: dni,
-        position: position,
-        telefono: telefono,
-        email: email,
-        direccion: direccion,
-      });
+            try {
+              await updateDoc(employeeRef, {
+                firstName: firstName,
+                lastName: lastName,
+                dni: dni,
+                position: position,
+                telefono: telefono,
+                email: email,
+                direccion: direccion,
+              });
 
-      Alert.alert("Éxito", "Empleado actualizado correctamente.", [
-        { text: "OK", onPress: () => navigation.navigate('Empleados') }
-      ]);
+              Alert.alert("Éxito", "Empleado actualizado correctamente.", [
+                { text: "OK", onPress: () => navigation.popToTop() }
+              ]);
 
-    } catch (error) {
-      console.error("Error updating document: ", error);
-      Alert.alert("Error", "Hubo un problema al actualizar el empleado.");
-    } finally {
-      setLoading(false);
-    }
+            } catch (error) {
+              console.error("Error updating document: ", error);
+              Alert.alert("Error", "Hubo un problema al actualizar el empleado.");
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
