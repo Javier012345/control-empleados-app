@@ -5,7 +5,10 @@ import { useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
+import { useAppContext } from '../../src/context/AppContext';
+
 export default function AgregarEmpleado({ navigation }) {
+  const { addActivity } = useAppContext();
   const { colors } = useTheme();
   const styles = getStyles(colors);
   const [firstName, setFirstName] = useState('');
@@ -36,6 +39,12 @@ export default function AgregarEmpleado({ navigation }) {
         direccion: direccion,
         status: 'Activo', // Estado por defecto
         createdAt: serverTimestamp(),
+      });
+
+      addActivity({
+        type: 'new_employee',
+        text: `Nuevo empleado ${firstName} ${lastName} ha sido añadido.`,
+        time: new Date(),
       });
 
       Alert.alert("Éxito", "Empleado registrado correctamente.");

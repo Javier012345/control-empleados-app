@@ -16,11 +16,19 @@ export const AppProvider = ({ children }) => {
     setUserRole(prevRole => (prevRole === 'user' ? 'admin' : 'user'));
   };
 
+  const [recentActivity, setRecentActivity] = useState([]);
+
+  const addActivity = (activity) => {
+    setRecentActivity(prevActivities => [activity, ...prevActivities].slice(0, 5)); // Mantener solo las 5 actividades más recientes
+  };
+
   const value = {
     theme,
     toggleTheme,
     userRole,
     toggleUserRole,
+    recentActivity,
+    addActivity,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

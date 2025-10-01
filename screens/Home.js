@@ -25,7 +25,20 @@ const ActivityItem = ({ icon, text, time, iconColor, bgColor, styles }) => (
   </View>
 );
 
+import { useAppContext } from '../src/context/AppContext';
+
+const formatTime = (date) => {
+  const now = new Date();
+  const diff = Math.abs(now - date) / 1000; // Diferencia en segundos
+
+  if (diff < 60) return `Hace ${Math.floor(diff)} seg`;
+  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} horas`;
+  return date.toLocaleDateString();
+};
+
 export default function Home() {
+  const { recentActivity } = useAppContext();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     newHires: 0,
@@ -87,9 +100,21 @@ export default function Home() {
       
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Actividad Reciente</Text>
-        <ActivityItem icon="log-in" text="Ana Torres marcó su asistencia a las 09:02 AM." time="Hace 5 min" iconColor="#16A34A" bgColor={isDarkMode ? 'rgba(22, 163, 74, 0.2)' : '#D1FAE5'} styles={styles} />
-        <ActivityItem icon="alert-triangle" text="Se reportó un incidente para Carlos Vega." time="Hace 1 hora" iconColor="#F59E0B" bgColor={isDarkMode ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7'} styles={styles} />
-        <ActivityItem icon="user-plus" text="Nuevo empleado Laura Méndez ha sido añadido." time="Hace 3 horas" iconColor="#3B82F6" bgColor={isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE'} styles={styles} />
+        {recentActivity.length > 0 ? (
+          recentActivity.map((activity, index) => (
+            <ActivityItem 
+              key={index}
+              icon="user-plus" 
+              text={activity.text} 
+              time={formatTime(activity.time)} 
+              iconColor="#3B82F6" 
+              bgColor={isDarkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE'} 
+              styles={styles} 
+            />
+          ))
+        ) : (
+          <Text style={styles.activityText}>No hay actividad reciente.</Text>
+        )}
       </View>
     </ScrollView>
   );
