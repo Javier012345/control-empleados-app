@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -11,70 +12,20 @@ export default function Login({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [generalError, setGeneralError] = useState('');
+  // Eliminamos los errores visuales
 
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      setEmailError('El correo es obligatorio.');
-      return false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('El formato del correo no es válido.');
-      return false;
-    } else {
-      setEmailError('');
-      return true;
-    }
-  };
-
-  const validatePassword = (password) => {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!password) {
-      setPasswordError('La contraseña es obligatoria.');
-      return false;
-    } else if (!passwordRegex.test(password)) {
-      setPasswordError('Debe tener 6+ caracteres, mayúscula, minúscula y número.');
-      return false;
-    } else {
-      setPasswordError('');
-      return true;
-    }
-  };
+  // No validamos ni mostramos errores en pantalla
 
   const handleLogin = async () => {
-    setGeneralError('');
-    const isEmailValid = validateEmail(email);
-    const isPasswordValid = validatePassword(password);
-
-    if (!isEmailValid || !isPasswordValid) {
-      return;
-    }
-
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // Navigation to Home is handled by the auth state listener
     } catch (error) {
-      let errorMessage = "Hubo un problema al iniciar sesión.";
-      switch (error.code) {
-        case 'auth/invalid-email':
-        case 'auth/user-not-found':
-          setEmailError("No se encontró un usuario con este correo.");
-          break;
-        case 'auth/wrong-password':
-          setPasswordError("La contraseña es incorrecta.");
-          break;
-        case 'auth/network-request-failed':
-          setGeneralError("Error de conexión. Por favor, intenta más tarde.");
-          break;
-        default:
-          setGeneralError(errorMessage);
-      }
+      Alert.alert('Error', 'Las credenciales son incorrectas.');
     } finally {
       setLoading(false);
     }
@@ -89,45 +40,36 @@ return (
 
     {/* Etiqueta Email */}
     <Text style={styles.label}>Email</Text>
-    <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
+  <View style={styles.inputContainer}>
       <Feather name="mail" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="ejemplo@email.com"
         placeholderTextColor={colors.placeholder}
         value={email}
-        onChangeText={text => {
-          setEmail(text);
-          if (emailError) setEmailError('');
-        }}
+        onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
     </View>
-    {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
     {/* Etiqueta Contraseña */}
     <Text style={styles.label}>Contraseña</Text>
-    <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
+  <View style={styles.inputContainer}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="Ej: Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={password}
-        onChangeText={text => {
-          setPassword(text);
-          if (passwordError) setPasswordError('');
-        }}
+        onChangeText={setPassword}
         secureTextEntry={!showPassword}
       />
       <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
         <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
       </TouchableOpacity>
     </View>
-    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
-    {generalError ? <Text style={styles.generalErrorText}>{generalError}</Text> : null}
 
     <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
       {loading ? (

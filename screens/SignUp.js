@@ -17,63 +17,54 @@ export default function SignUp({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [fullNameError, setFullNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  // Eliminamos los errores de nombre, solo validamos input
+  const [emailValid, setEmailValid] = useState(null); // null: no escrito, false: mal, true: bien
+  const [passwordValidations, setPasswordValidations] = useState({
+    length: false,
+    upper: false,
+    number: false,
+  });
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordMatch, setConfirmPasswordMatch] = useState(null); // null: no escrito, false: mal, true: bien
 
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
 
-  const validateFullName = (name) => {
-    if (!name.trim()) {
-      setFullNameError('El nombre completo es obligatorio.');
-      return false;
+
+  // Solo permitir letras y espacios en el nombre
+  const handleFullNameChange = (text) => {
+    setFullName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
+  };
+
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    if (text.length === 0) {
+      setEmailValid(null);
     } else {
-      setFullNameError('');
-      return true;
+      setEmailValid(emailRegex.test(text));
     }
   };
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      setEmailError('El correo es obligatorio.');
-      return false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError('El formato del correo no es válido.');
-      return false;
-    } else {
-      setEmailError('');
-      return true;
-    }
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    if (!passwordTouched && text.length > 0) setPasswordTouched(true);
+    if (text.length === 0) setPasswordTouched(false);
+    setPasswordValidations({
+      length: text.length >= 6,
+      upper: /[A-Z]/.test(text),
+      number: /[0-9]/.test(text),
+    });
+    // Validar confirmación en tiempo real
+    setConfirmPasswordMatch(text && confirmPassword ? text === confirmPassword : null);
   };
 
-  const validatePassword = (password) => {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!password) {
-      setPasswordError('La contraseña es obligatoria.');
-      return false;
-    } else if (!passwordRegex.test(password)) {
-      setPasswordError('Debe tener 6+ caracteres, mayúscula, minúscula y número.');
-      return false;
-    } else {
-      setPasswordError('');
-      return true;
-    }
-  };
 
-  const validateConfirmPassword = (confirmPass) => {
-    if (!confirmPass) {
-      setConfirmPasswordError('Debes confirmar la contraseña.');
-      return false;
-    } else if (password !== confirmPass) {
-      setConfirmPasswordError('Las contraseñas no coinciden.');
-      return false;
-    } else {
-      setConfirmPasswordError('');
-      return true;
-    }
+  const handleConfirmPasswordChange = (text) => {
+    setConfirmPassword(text);
+    setConfirmPasswordMatch(password && text ? password === text : null);
   };
 
   const handleSignUp = async () => {
@@ -124,81 +115,113 @@ export default function SignUp({ navigation }) {
 
     {/* Nombre completo */}
     <Text style={styles.label}>Nombre *</Text>
-    <View style={[styles.inputContainer, fullNameError ? styles.inputError : {}]}>
+    <View style={styles.inputContainer}>
       <Feather name="user" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="Nombre"
         placeholderTextColor={colors.placeholder}
         value={fullName}
-        onChangeText={text => {
-          setFullName(text);
-          if (fullNameError) setFullNameError('');
-        }}
+        onChangeText={handleFullNameChange}
+        autoCapitalize="words"
       />
     </View>
-    {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
 
     {/* Email */}
     <Text style={styles.label}>Email *</Text>
-    <View style={[styles.inputContainer, emailError ? styles.inputError : {}]}>
+    <View style={styles.inputContainer}>
       <Feather name="mail" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="ejemplo@gmail.com"
         placeholderTextColor={colors.placeholder}
         value={email}
-        onChangeText={text => {
-          setEmail(text);
-          if (emailError) setEmailError('');
-        }}
+        onChangeText={handleEmailChange}
         keyboardType="email-address"
         autoCapitalize="none"
       />
     </View>
-    {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+    {email.length > 0 && (
+      <Text style={{
+        color: emailValid ? 'green' : '#666',
+        fontSize: 12,
+        marginLeft: 4,
+        textAlign: 'left',
+        alignSelf: 'flex-start',
+      }}>
+        {emailValid === null ? 'Formato válido' : emailValid ? 'Formato válido' : 'Formato inválido'}
+      </Text>
+    )}
 
     {/* Contraseña */}
     <Text style={styles.label}>Contraseña *</Text>
-    <View style={[styles.inputContainer, passwordError ? styles.inputError : {}]}>
+    <View style={styles.inputContainer}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={password}
-        onChangeText={text => {
-          setPassword(text);
-          if (passwordError) setPasswordError('');
-        }}
+        onChangeText={handlePasswordChange}
         secureTextEntry={!showPassword}
+        autoCapitalize="none"
       />
       <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
         <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
       </TouchableOpacity>
     </View>
-    {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+    {/* Validaciones de contraseña */}
+    {passwordTouched && (
+      <View style={{ marginLeft: 4, marginTop: 2, alignSelf: 'flex-start' }}>
+        <Text style={{
+          color: passwordValidations.length ? 'green' : '#666',
+          fontSize: 12,
+          textAlign: 'left',
+          alignSelf: 'flex-start',
+        }}>+6 caracteres</Text>
+        <Text style={{
+          color: passwordValidations.upper ? 'green' : '#666',
+          fontSize: 12,
+          textAlign: 'left',
+          alignSelf: 'flex-start',
+        }}>Al menos una Mayúscula</Text>
+        <Text style={{
+          color: passwordValidations.number ? 'green' : '#666',
+          fontSize: 12,
+          textAlign: 'left',
+          alignSelf: 'flex-start',
+        }}>Al menos un Número</Text>
+      </View>
+    )}
 
     {/* Confirmar contraseña */}
     <Text style={styles.label}>Confirmar contraseña *</Text>
-    <View style={[styles.inputContainer, confirmPasswordError ? styles.inputError : {}]}>
+    <View style={styles.inputContainer}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
         style={styles.input}
         placeholder="Ejemplo123"
         placeholderTextColor={colors.placeholder}
         value={confirmPassword}
-        onChangeText={text => {
-          setConfirmPassword(text);
-          if (confirmPasswordError) setConfirmPasswordError('');
-        }}
+        onChangeText={handleConfirmPasswordChange}
         secureTextEntry={!showConfirmPassword}
+        autoCapitalize="none"
       />
       <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
         <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
       </TouchableOpacity>
     </View>
-    {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+    {confirmPassword.length > 0 && (
+      <Text style={{
+        color: confirmPasswordMatch ? 'green' : '#666',
+        fontSize: 12,
+        marginLeft: 4,
+        textAlign: 'left',
+        alignSelf: 'flex-start',
+      }}>
+        {confirmPasswordMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
+      </Text>
+    )}
     {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
 
     <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
