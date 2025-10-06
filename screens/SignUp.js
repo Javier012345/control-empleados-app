@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -8,11 +8,11 @@ import { useTheme } from '@react-navigation/native';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  const [generalError, setGeneralError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,10 @@ export default function SignUp({ navigation }) {
   // Solo permitir letras y espacios en el nombre
   const handleFullNameChange = (text) => {
     setFullName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
+  };
+
+  const handleLastNameChange = (text) => {
+    setLastName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
   };
 
 
@@ -68,12 +72,23 @@ export default function SignUp({ navigation }) {
   };
 
   const handleSignUp = async () => {
-    const isFullNameValid = validateFullName(fullName);
-    const isEmailValid = validateEmail(email);
-    const isPasswordValid = validatePassword(password);
-    const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
+    if (!fullName || !lastName || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Todos los campos son requeridos.");
+      return;
+    }
 
-    if (!isFullNameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
+    if (!emailValid) {
+      Alert.alert("Error", "El formato del email es incorrecto.");
+      return;
+    }
+
+    if (!passwordValidations.length || !passwordValidations.upper || !passwordValidations.number) {
+      Alert.alert("Error", "La contraseña no cumple los requisitos.");
+      return;
+    }
+
+    if (!confirmPasswordMatch) {
+      Alert.alert("Error", "Las contraseñas no coinciden.");
       return;
     }
 
@@ -82,12 +97,8 @@ export default function SignUp({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const nameParts = fullName.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-
       await setDoc(doc(db, "users", user.uid), {
-        firstName: firstName,
+        firstName: fullName,
         lastName: lastName,
         email: email,
       });
@@ -96,10 +107,10 @@ export default function SignUp({ navigation }) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
         case 'auth/email-already-in-use':
-          setEmailError("El correo electrónico ya está en uso.");
+          Alert.alert("Error", "El correo electrónico ya está en uso.");
           break;
         default:
-          setGeneralError(errorMessage);
+          Alert.alert("Error", errorMessage);
       }
     } finally {
       setLoading(false);
@@ -114,7 +125,7 @@ export default function SignUp({ navigation }) {
     <Text style={styles.description}>Crea una cuenta para empezar a utilizar la aplicación.</Text>
 
     {/* Nombre completo */}
-    <Text style={styles.label}>Nombre *</Text>
+    <Text style={styles.label}>Nombre </Text>
     <View style={styles.inputContainer}>
       <Feather name="user" size={20} style={styles.icon} />
       <TextInput
@@ -127,8 +138,22 @@ export default function SignUp({ navigation }) {
       />
     </View>
 
+    {/* Apellido */}
+    <Text style={styles.label}>Apellido </Text>
+    <View style={styles.inputContainer}>
+      <Feather name="user" size={20} style={styles.icon} />
+      <TextInput
+        style={styles.input}
+        placeholder="Apellido"
+        placeholderTextColor={colors.placeholder}
+        value={lastName}
+        onChangeText={handleLastNameChange}
+        autoCapitalize="words"
+      />
+    </View>
+
     {/* Email */}
-    <Text style={styles.label}>Email *</Text>
+    <Text style={styles.label}>Email </Text>
     <View style={styles.inputContainer}>
       <Feather name="mail" size={20} style={styles.icon} />
       <TextInput
@@ -154,7 +179,7 @@ export default function SignUp({ navigation }) {
     )}
 
     {/* Contraseña */}
-    <Text style={styles.label}>Contraseña *</Text>
+    <Text style={styles.label}>Contraseña </Text>
     <View style={styles.inputContainer}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
@@ -195,7 +220,7 @@ export default function SignUp({ navigation }) {
     )}
 
     {/* Confirmar contraseña */}
-    <Text style={styles.label}>Confirmar contraseña *</Text>
+    <Text style={styles.label}>Confirmar contraseña </Text>
     <View style={styles.inputContainer}>
       <Feather name="lock" size={20} style={styles.icon} />
       <TextInput
@@ -222,7 +247,6 @@ export default function SignUp({ navigation }) {
         {confirmPasswordMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
       </Text>
     )}
-    {generalError ? <Text style={styles.errorText}>{generalError}</Text> : null}
 
     <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
       {loading ? (
@@ -234,7 +258,7 @@ export default function SignUp({ navigation }) {
 
     <TouchableOpacity onPress={() => navigation.navigate('Login')}>
       <Text style={styles.signInText}>
-        ¿Ya tienes una cuenta? <Text style={styles.signInLink}>Inicia Sesión</Text>
+        ¿Ya tenes una cuenta? <Text style={styles.signInLink}>Inicia Sesión</Text>
       </Text>
     </TouchableOpacity>
   </ScrollView>
