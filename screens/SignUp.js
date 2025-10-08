@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../src/config/firebaseConfig';
 import { useTheme } from '@react-navigation/native';
+import CustomAlert from '../src/components/CustomAlert';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -16,6 +17,7 @@ export default function SignUp({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({ visible: false, title: '', message: '' });
   
   // Eliminamos los errores de nombre, solo validamos input
   const [emailValid, setEmailValid] = useState(null); // null: no escrito, false: mal, true: bien
@@ -73,22 +75,22 @@ export default function SignUp({ navigation }) {
 
   const handleSignUp = async () => {
     if (!fullName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son requeridos.");
+      setAlert({ visible: true, title: "Error", message: "Todos los campos son requeridos." });
       return;
     }
 
     if (!emailValid) {
-      Alert.alert("Error", "El formato del email es incorrecto.");
+      setAlert({ visible: true, title: "Error", message: "El formato del email es incorrecto." });
       return;
     }
 
     if (!passwordValidations.length || !passwordValidations.upper || !passwordValidations.number) {
-      Alert.alert("Error", "La contraseña no cumple los requisitos.");
+      setAlert({ visible: true, title: "Error", message: "La contraseña no cumple los requisitos." });
       return;
     }
 
     if (!confirmPasswordMatch) {
-      Alert.alert("Error", "Las contraseñas no coinciden.");
+      setAlert({ visible: true, title: "Error", message: "Las contraseñas no coinciden." });
       return;
     }
 
@@ -107,10 +109,10 @@ export default function SignUp({ navigation }) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
         case 'auth/email-already-in-use':
-          Alert.alert("Error", "El correo electrónico ya está en uso.");
+          setAlert({ visible: true, title: "Error", message: "El correo electrónico ya está en uso." });
           break;
         default:
-          Alert.alert("Error", errorMessage);
+          setAlert({ visible: true, title: "Error", message: errorMessage });
       }
     } finally {
       setLoading(false);
@@ -118,6 +120,13 @@ export default function SignUp({ navigation }) {
   };
 
   return (
+    <>
+      <CustomAlert
+        visible={alert.visible}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ visible: false, title: '', message: '' })}
+      />
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
   <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
     <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
@@ -263,6 +272,7 @@ export default function SignUp({ navigation }) {
     </TouchableOpacity>
   </ScrollView>
 </KeyboardAvoidingView>
+    </>
   );
 }
 
