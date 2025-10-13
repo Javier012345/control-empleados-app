@@ -93,7 +93,7 @@ return (
 
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
             <Text style={styles.signUpText}>
-              ¿No tienes una cuenta? <Text style={styles.signUpLink}>Regístrate</Text>geo
+              ¿No tenés una cuenta? <Text style={styles.signUpLink}>Regístrate</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>

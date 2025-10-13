@@ -147,17 +147,19 @@ function EmployeesStack({ navigation }) {
 function Navigation() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { theme } = useAppContext();
+  const { theme, isSigningUp } = useAppContext();
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
-      setUser(user);
+      if (!isSigningUp) {
+        setUser(user);
+      }
       if (loading) {
         setLoading(false);
       }
     });
     return () => unsubscribe();
-  }, []); // Se ejecuta solo una vez al montar el componente
+  }, [isSigningUp]); // Se ejecuta solo una vez al montar el componente
 
   if (loading) {
     return null; // O un componente de pantalla de carga (Splash Screen)
@@ -192,7 +194,7 @@ function Navigation() {
         ) : (
           <>
             <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
-            <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+            <Stack.Screen name="SignUp" component={SignUp} options={{ headerTransparent: true, headerTitle: '', headerBackTitleVisible: false }} />
           </>
         )}
       </Stack.Navigator>
