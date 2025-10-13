@@ -15,6 +15,7 @@ import AgregarEmpleado from '../screens/Empleados/AgregarEmpleado'; // Ruta y no
 import VerEmpleado from '../screens/Empleados/VerEmpleado';
 import EditarEmpleado from '../screens/Empleados/EditarEmpleado';
 import Notifications from '../screens/Notifications'; // Importar la nueva pantalla
+import CustomAlert from '../src/components/CustomAlert';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -42,7 +43,7 @@ const getHeaderOptions = (title, navigation) => {
 
 // Componente para los iconos del header que usa el contexto
 function HeaderRightIcons({ navigation }) {
-  const { theme, toggleTheme, userRole, toggleUserRole } = useAppContext();
+  const { theme, toggleTheme } = useAppContext();
   const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
 
   return (
@@ -53,9 +54,7 @@ function HeaderRightIcons({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 20 }}>
         <FontAwesome name="bell-o" size={24} color={colors.text} />
       </TouchableOpacity>
-      <TouchableOpacity onPress={toggleUserRole}>
-        <FontAwesome name="user-secret" size={24} color={userRole === 'admin' ? '#dc3545' : '#444'} />
-      </TouchableOpacity>
+
     </View>
   );
 }
@@ -64,13 +63,23 @@ function HeaderRightIcons({ navigation }) {
 function CustomDrawerContent(props) {
   const { theme } = useAppContext();
   const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+  const [alertVisible, setAlertVisible] = useState(false);
 
-  const handleSignOut = async () => {
+  const handleLogout = () => {
+    setAlertVisible(true);
+  };
+
+  const confirmLogout = async () => {
+    setAlertVisible(false);
     try {
       await signOut(auth);
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
+  };
+
+  const cancelLogout = () => {
+    setAlertVisible(false);
   };
 
   return (
@@ -89,10 +98,18 @@ function CustomDrawerContent(props) {
       </View>
 
       {/* Botón de Cerrar Sesión en la parte inferior */}
-      <TouchableOpacity style={[styles.logoutButton, { borderTopColor: colors.border }]} onPress={handleSignOut}>
+      <TouchableOpacity style={[styles.logoutButton, { borderTopColor: colors.border }]} onPress={handleLogout}>
         <FontAwesome name="sign-out" size={22} color={colors.text} />
         <Text style={[styles.logoutButtonText, { color: colors.text }]}>Cerrar Sesión</Text>
       </TouchableOpacity>
+
+      <CustomAlert
+        visible={alertVisible}
+        title="Cerrar Sesión"
+        message="¿Estás seguro de que quieres cerrar sesión?"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
     </DrawerContentScrollView>
   );
 }
