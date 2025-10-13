@@ -7,6 +7,7 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [theme, setTheme] = useState('light'); // 'light' o 'dark'
   const [userRole, setUserRole] = useState('user'); // 'user' o 'admin'
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
@@ -29,6 +30,8 @@ export const AppProvider = ({ children }) => {
     toggleUserRole,
     recentActivity,
     addActivity,
+    isSigningUp,
+    setIsSigningUp,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
