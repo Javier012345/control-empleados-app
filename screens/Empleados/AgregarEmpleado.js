@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { db } from '../../src/config/firebaseConfig';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 
+import CustomAlert from '../../src/components/CustomAlert';
 import { useAppContext } from '../../src/context/AppContext';
 
 export default function AgregarEmpleado({ navigation }) {
@@ -19,67 +22,108 @@ export default function AgregarEmpleado({ navigation }) {
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
-  const handleAddEmployee = async () => {
-    if (!firstName) {
-      Alert.alert("Campo requerido", "El nombre es obligatorio.");
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleUpload = async (uri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      type: 'image/jpeg',
+      name: 'upload.jpg',
+    });
+    formData.append('upload_preset', cloudinaryConfig.upload_preset);
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloud_name}/image/upload`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      Alert.alert("Error", "Hubo un problema al subir la imagen.");
+      return null;
+    }
+  };
+
+  const handleSaveEmployee = async () => {
+    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion || !image) {
+      setAlertInfo({ visible: true, title: "Campos requeridos", message: "Todos los campos son obligatorios, incluyendo la foto." });
       return;
     }
-    if (!lastName) {
-      Alert.alert("Campo requerido", "El apellido es obligatorio.");
+    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El nombre solo debe contener letras y espacios." });
       return;
     }
-    if (!dni) {
-      Alert.alert("Campo requerido", "El DNI es obligatorio.");
+
+    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El apellido solo debe contener letras y espacios." });
       return;
     }
     if (!/^[0-9]+$/.test(dni)) {
-      Alert.alert("Dato inválido", "El DNI debe ser solo numérico.");
-      return;
-    }
-    if (!position) {
-      Alert.alert("Campo requerido", "El cargo es obligatorio.");
-      return;
-    }
-    if (!telefono) {
-      Alert.alert("Campo requerido", "El teléfono es obligatorio.");
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El DNI debe ser solo numérico." });
       return;
     }
     if (!/^[0-9]+$/.test(telefono)) {
-      Alert.alert("Dato inválido", "El teléfono debe ser solo numérico.");
-      return;
-    }
-    if (!email) {
-      Alert.alert("Campo requerido", "El email es obligatorio.");
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El teléfono debe ser solo numérico." });
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert("Dato inválido", "El email no es válido.");
-      return;
-    }
-    if (!direccion) {
-      Alert.alert("Campo requerido", "La dirección es obligatoria.");
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El email no es válido." });
       return;
     }
 
     setLoading(true);
+    let imageUrl = '';
+
+    if (image) {
+      imageUrl = await handleUpload(image);
+      if (!imageUrl) {
+        setLoading(false);
+        return; // Detener si la carga de la imagen falla
+      }
+    }
 
     try {
       await addDoc(collection(db, "employees"), {
-        firstName: firstName,
-        lastName: lastName,
-        dni: dni,
-        position: position,
-        telefono: telefono,
-        email: email,
-        direccion: direccion,
-        status: 'Activo', // Estado por defecto
+        firstName,
+        lastName,
+        dni,
+        position,
+        telefono,
+        email,
+        direccion,
+        imageUrl,
+        status: 'Activo',
         createdAt: serverTimestamp(),
       });
 
@@ -89,12 +133,16 @@ export default function AgregarEmpleado({ navigation }) {
         time: new Date(),
       });
 
-      Alert.alert("Éxito", "Empleado registrado correctamente.");
-      navigation.goBack();
+      setAlertInfo({
+        visible: true,
+        title: "Éxito",
+        message: "Empleado registrado correctamente.",
+        onConfirm: () => navigation.goBack(),
+      });
 
     } catch (error) {
       console.error("Error adding document: ", error);
-      Alert.alert("Error", "Hubo un problema al registrar el empleado.");
+      setAlertInfo({ visible: true, title: "Error", message: "Hubo un problema al registrar el empleado." });
     } finally {
       setLoading(false);
     }
@@ -102,8 +150,28 @@ export default function AgregarEmpleado({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      <CustomAlert
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        onConfirm={() => {
+          setAlertInfo({ ...alertInfo, visible: false });
+          if (alertInfo.onConfirm) alertInfo.onConfirm();
+        }}
+      />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Registrar Nuevo Empleado</Text>
+
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.imagePreview} />
+          ) : (
+            <>
+              <Feather name="camera" size={24} color={colors.primary} />
+              <Text style={styles.imagePickerText}>Añadir Foto</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <View style={styles.inputContainer}>
           <Feather name="user" size={20} style={styles.icon} />
@@ -112,7 +180,7 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="Nombre"
             placeholderTextColor={colors.placeholder}
             value={firstName}
-            onChangeText={setFirstName}
+            onChangeText={text => setFirstName(text.replace(/[^a-zA-Z\s]/g, ''))}
           />
         </View>
 
@@ -123,7 +191,7 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="Apellido"
             placeholderTextColor={colors.placeholder}
             value={lastName}
-            onChangeText={setLastName}
+            onChangeText={text => setLastName(text.replace(/[^a-zA-Z\s]/g, ''))}
           />
         </View>
 
@@ -194,7 +262,7 @@ export default function AgregarEmpleado({ navigation }) {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleAddEmployee} disabled={loading}>
+        <TouchableOpacity style={styles.button} onPress={handleSaveEmployee} disabled={loading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -228,10 +296,33 @@ const getStyles = (colors) => StyleSheet.create({
     textAlign: 'center',
     color: colors.text,
   },
+  imagePicker: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  imagePickerText: {
+    marginTop: 8,
+    color: colors.primary,
+    fontSize: 12,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background, // Slightly different background for inputs
+    backgroundColor: colors.background,
     borderRadius: 8,
     paddingHorizontal: 16,
     borderWidth: 1,
