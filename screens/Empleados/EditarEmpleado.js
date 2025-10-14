@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+import CustomAlert from '../../src/components/CustomAlert';
 
 export default function EditarEmpleado({ route, navigation }) {
   const { employee } = route.params;
@@ -18,56 +19,85 @@ export default function EditarEmpleado({ route, navigation }) {
   const [email, setEmail] = useState(employee.email);
   const [direccion, setDireccion] = useState(employee.direccion);
   const [loading, setLoading] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', onConfirm: null, onCancel: null });
 
   const handleUpdateEmployee = async () => {
     if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion) {
-      Alert.alert("Error", "Todos los campos son obligatorios.");
+      setAlertConfig({
+        title: 'Error',
+        message: 'Todos los campos son obligatorios.',
+        onConfirm: () => setAlertVisible(false),
+        onCancel: () => setAlertVisible(false),
+      });
+      setAlertVisible(true);
       return;
     }
 
-    Alert.alert(
-      "Confirmar Edición",
-      "¿Estás seguro de que quieres guardar los cambios?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel"
+    setAlertConfig({
+      title: 'Confirmar Edición',
+      message: '¿Estás seguro de que quieres guardar los cambios?',
+      onConfirm: () => {
+        setAlertVisible(false);
+        executeUpdate();
+      },
+      onCancel: () => setAlertVisible(false),
+    });
+    setAlertVisible(true);
+  };
+
+  const executeUpdate = async () => {
+    setLoading(true);
+    const employeeRef = doc(db, "employees", employee.id);
+
+    try {
+      await updateDoc(employeeRef, {
+        firstName: firstName,
+        lastName: lastName,
+        dni: dni,
+        position: position,
+        telefono: telefono,
+        email: email,
+        direccion: direccion,
+      });
+
+      setAlertConfig({
+        title: 'Éxito',
+        message: 'Empleado actualizado correctamente.',
+        onConfirm: () => {
+          setAlertVisible(false);
+          navigation.popToTop();
         },
-        {
-          text: "Confirmar",
-          onPress: async () => {
-            setLoading(true);
-            const employeeRef = doc(db, "employees", employee.id);
+        onCancel: () => {
+          setAlertVisible(false);
+          navigation.popToTop();
+        },
+      });
+      setAlertVisible(true);
 
-            try {
-              await updateDoc(employeeRef, {
-                firstName: firstName,
-                lastName: lastName,
-                dni: dni,
-                position: position,
-                telefono: telefono,
-                email: email,
-                direccion: direccion,
-              });
-
-              Alert.alert("Éxito", "Empleado actualizado correctamente.", [
-                { text: "OK", onPress: () => navigation.popToTop() }
-              ]);
-
-            } catch (error) {
-              console.error("Error updating document: ", error);
-              Alert.alert("Error", "Hubo un problema al actualizar el empleado.");
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      setAlertConfig({
+        title: 'Error',
+        message: 'Hubo un problema al actualizar el empleado.',
+        onConfirm: () => setAlertVisible(false),
+        onCancel: () => setAlertVisible(false),
+      });
+      setAlertVisible(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onCancel={alertConfig.onCancel}
+      />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Editar Datos del Empleado</Text>
 

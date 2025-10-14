@@ -20,10 +20,11 @@ export default function VerEmpleado({ route }) {
         if (docSnap.exists()) {
           const data = docSnap.data();
           const initials = `${data.firstName?.[0] || ''}${data.lastName?.[0] || ''}`.toUpperCase();
+          const avatarUrl = data.imageUrl || `https://placehold.co/150x150/FFC107/1F2937?text=${initials}`;
           setEmployee({ 
             id: docSnap.id, 
             ...data,
-            avatar: `https://placehold.co/150x150/FFC107/1F2937?text=${initials}`
+            avatar: avatarUrl
           });
         } else {
           console.log("No such document!");

@@ -1,10 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../src/config/firebaseConfig';
 import { useTheme } from '@react-navigation/native';
+import CustomAlert from '../src/components/CustomAlert';
+import { useAppContext } from '../src/context/AppContext';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -16,13 +18,16 @@ export default function SignUp({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({ visible: false, title: '', message: '' });
   
+  const { setIsSigningUp } = useAppContext();
   // Eliminamos los errores de nombre, solo validamos input
   const [emailValid, setEmailValid] = useState(null); // null: no escrito, false: mal, true: bien
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
     upper: false,
     number: false,
+    lower: false,
   });
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordMatch, setConfirmPasswordMatch] = useState(null); // null: no escrito, false: mal, true: bien
@@ -60,6 +65,7 @@ export default function SignUp({ navigation }) {
       length: text.length >= 6,
       upper: /[A-Z]/.test(text),
       number: /[0-9]/.test(text),
+      lower: /[a-z]/.test(text),
     });
     // Validar confirmación en tiempo real
     setConfirmPasswordMatch(text && confirmPassword ? text === confirmPassword : null);
@@ -73,26 +79,27 @@ export default function SignUp({ navigation }) {
 
   const handleSignUp = async () => {
     if (!fullName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son requeridos.");
+      setAlert({ visible: true, title: "Error", message: "Todos los campos son requeridos." });
       return;
     }
 
     if (!emailValid) {
-      Alert.alert("Error", "El formato del email es incorrecto.");
+      setAlert({ visible: true, title: "Error", message: "El formato del email es incorrecto." });
       return;
     }
 
-    if (!passwordValidations.length || !passwordValidations.upper || !passwordValidations.number) {
-      Alert.alert("Error", "La contraseña no cumple los requisitos.");
+    if (!passwordValidations.length || !passwordValidations.upper || !passwordValidations.number || !passwordValidations.lower) {
+      setAlert({ visible: true, title: "Error", message: "La contraseña no cumple los requisitos." });
       return;
     }
 
     if (!confirmPasswordMatch) {
-      Alert.alert("Error", "Las contraseñas no coinciden.");
+      setAlert({ visible: true, title: "Error", message: "Las contraseñas no coinciden." });
       return;
     }
 
     setLoading(true);
+    setIsSigningUp(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -102,22 +109,41 @@ export default function SignUp({ navigation }) {
         lastName: lastName,
         email: email,
       });
-      // Navigation to Home is handled by the auth state listener
+
+      await signOut(auth);
+      setAlert({
+        visible: true,
+        title: "Registro exitoso",
+        message: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+        onClose: () => {
+          setAlert({ visible: false, title: '', message: '' });
+          navigation.navigate('Login');
+        }
+      });
+
     } catch (error) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
         case 'auth/email-already-in-use':
-          Alert.alert("Error", "El correo electrónico ya está en uso.");
+          setAlert({ visible: true, title: "Error", message: "El correo electrónico ya está en uso." });
           break;
         default:
-          Alert.alert("Error", errorMessage);
+          setAlert({ visible: true, title: "Error", message: errorMessage });
       }
     } finally {
       setLoading(false);
+      setIsSigningUp(false);
     }
   };
 
   return (
+    <>
+      <CustomAlert
+        visible={alert.visible}
+        title={alert.title}
+        message={alert.message}
+        onClose={alert.onClose || (() => setAlert({ visible: false, title: '', message: '' }))}
+      />
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
   <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
     <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
@@ -199,6 +225,12 @@ export default function SignUp({ navigation }) {
     {passwordTouched && (
       <View style={{ marginLeft: 4, marginTop: 2, alignSelf: 'flex-start' }}>
         <Text style={{
+          color: colors.text,
+          fontSize: 12,
+          fontWeight: 'bold',
+          marginBottom: 2,
+        }}>La contraseña debe incluir:</Text>
+        <Text style={{
           color: passwordValidations.length ? 'green' : '#666',
           fontSize: 12,
           textAlign: 'left',
@@ -210,6 +242,12 @@ export default function SignUp({ navigation }) {
           textAlign: 'left',
           alignSelf: 'flex-start',
         }}>Al menos una Mayúscula</Text>
+        <Text style={{
+          color: passwordValidations.lower ? 'green' : '#666',
+          fontSize: 12,
+          textAlign: 'left',
+          alignSelf: 'flex-start',
+        }}>Al menos una Minúscula</Text>
         <Text style={{
           color: passwordValidations.number ? 'green' : '#666',
           fontSize: 12,
@@ -255,14 +293,9 @@ export default function SignUp({ navigation }) {
         <Text style={styles.buttonText}>Registrarse</Text>
       )}
     </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-      <Text style={styles.signInText}>
-        ¿Ya tenes una cuenta? <Text style={styles.signInLink}>Inicia Sesión</Text>
-      </Text>
-    </TouchableOpacity>
   </ScrollView>
 </KeyboardAvoidingView>
+    </>
   );
 }
 
