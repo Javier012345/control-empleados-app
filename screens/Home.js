@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
-import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, Timestamp, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '../src/config/firebaseConfig';
+import { PieChart } from "react-native-chart-kit";
 
 const StatCard = ({ icon, title, value, color, styles }) => (
   <View style={styles.card}>
@@ -25,7 +26,20 @@ const ActivityItem = ({ icon, text, time, iconColor, bgColor, styles }) => (
   </View>
 );
 
-import { useAppContext } from '../src/context/AppContext';
+const CustomLegend = ({ data, total, styles }) => (
+  <View style={styles.legendContainer}>
+    {data.map((item, index) => {
+      const percentage = total > 0 ? ((item.population / total) * 100).toFixed(1) : 0;
+      return (
+        <View key={index} style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+          <Text style={styles.legendText}>{item.name}</Text>
+          <Text style={styles.legendValue}>{`${item.population} (${percentage}%)`}</Text>
+        </View>
+      );
+    })}
+  </View>
+);
 
 const formatTime = (date) => {
   const now = new Date();
@@ -38,13 +52,14 @@ const formatTime = (date) => {
 };
 
 export default function Home() {
-  const { recentActivity } = useAppContext();
+  const [recentActivity, setRecentActivity] = useState([]);
   const [stats, setStats] = useState({
     totalEmployees: 0,
     newHires: 0,
     monthlySanctions: 0,
     todayAttendances: 0,
   });
+  const [positionData, setPositionData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -56,6 +71,7 @@ export default function Home() {
     const employeesCollection = collection(db, 'employees');
     const sanctionsCollection = collection(db, 'sanciones');
     const attendancesCollection = collection(db, 'asistencias');
+    const activityCollection = collection(db, 'activity');
 
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -63,10 +79,45 @@ export default function Home() {
     startOfDay.setHours(0, 0, 0, 0);
 
     const unsubscribers = [
-      onSnapshot(employeesCollection, snapshot => setStats(prev => ({ ...prev, totalEmployees: snapshot.size }))),
+      onSnapshot(employeesCollection, snapshot => {
+        const positions = {};
+        // Colores para cada cargo
+        const positionColors = {
+          'Gerente': '#F59E0B',
+          'Secretaria': '#10B981',
+          'Tecnico': '#3B82F6',
+          'Obrero': '#8B5CF6',
+          'Otro': '#6B7280'
+        };
+
+        snapshot.docs.forEach(doc => {
+          const position = doc.data().position || 'Otro';
+          positions[position] = (positions[position] || 0) + 1;
+        });
+
+        const chartData = Object.keys(positions).map(pos => ({
+          name: pos,
+          population: positions[pos],
+          color: positionColors[pos] || positionColors['Otro'],
+          legendFontColor: colors.text,
+          legendFontSize: 14,
+        }));
+
+        setPositionData(chartData);
+        setStats(prev => ({ ...prev, totalEmployees: snapshot.size }));
+      }),
       onSnapshot(query(employeesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, newHires: snapshot.size }))),
       onSnapshot(query(sanctionsCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, monthlySanctions: snapshot.size }))),
       onSnapshot(query(attendancesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfDay))), snapshot => setStats(prev => ({ ...prev, todayAttendances: snapshot.size }))),
+      // Suscripción en tiempo real a la actividad reciente
+      onSnapshot(query(activityCollection, orderBy('time', 'desc'), limit(5)), snapshot => {
+        const activities = snapshot.docs.map(doc => {
+          const data = doc.data();
+          // Convertir Timestamp de Firestore a Date de JS
+          return { ...data, id: doc.id, time: data.time.toDate() };
+        });
+        setRecentActivity(activities);
+      }),
     ];
 
     setLoading(false);
@@ -103,7 +154,7 @@ export default function Home() {
         {recentActivity.length > 0 ? (
           recentActivity.map((activity, index) => (
             <ActivityItem 
-              key={index}
+              key={activity.id || index}
               icon="user-plus" 
               text={activity.text} 
               time={formatTime(activity.time)} 
@@ -116,6 +167,29 @@ export default function Home() {
           <Text style={styles.activityText}>No hay actividad reciente.</Text>
         )}
       </View>
+
+      {positionData.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Distribución de Empleados</Text>
+          <View style={styles.chartContainer}>
+            <PieChart
+              data={positionData}
+              width={Dimensions.get('window').width - 64} // Ancho de la pantalla menos el padding
+              height={220}
+              chartConfig={{
+                color: (opacity = 1) => colors.text, // Usar el color de texto del tema
+              }}
+              accessor={"population"}
+              backgroundColor={"transparent"}
+              paddingLeft={"15"}
+              center={[Dimensions.get('window').width / 6, 0]} // Centrar mejor el gráfico
+              absolute
+              hasLegend={false} // Ocultamos la leyenda por defecto
+            />
+            <CustomLegend data={positionData} total={stats.totalEmployees} styles={styles} />
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -203,5 +277,34 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     color: colors.text,
     opacity: 0.6,
     marginLeft: 8,
+  },
+  chartContainer: {
+    alignItems: 'center',
+  },
+  legendContainer: {
+    width: '100%',
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  legendColor: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: 10,
+  },
+  legendText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+  },
+  legendValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
   },
 });
