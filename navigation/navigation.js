@@ -116,8 +116,13 @@ function CustomDrawerContent(props) {
 
 // Stack Navigator para la pantalla Home
 function HomeStack({ navigation }) {
+  const screenOptionsWithRightIcons = {
+    ...headerOptions,
+    headerRight: () => <HeaderRightIcons navigation={navigation} />,
+  };
+
   return (
-    <Stack.Navigator screenOptions={headerOptions}>
+    <Stack.Navigator screenOptions={screenOptionsWithRightIcons}>
       <Stack.Screen 
         name="Dashboard" 
         component={Home}
@@ -126,7 +131,7 @@ function HomeStack({ navigation }) {
       <Stack.Screen 
         name="Notifications"
         component={Notifications}
-        options={{ headerTitle: 'Notificaciones', headerBackTitle: 'Volver' }}
+        options={{ headerTitle: 'Notificaciones' }}
       />
     </Stack.Navigator>
   );
@@ -134,28 +139,36 @@ function HomeStack({ navigation }) {
 
 // Stack Navigator para la sección de Empleados
 function EmployeesStack({ navigation }) {
+  const screenOptionsWithRightIcons = {
+    ...headerOptions,
+    headerRight: () => <HeaderRightIcons navigation={navigation} />,
+  };
+
   return (
-    <Stack.Navigator screenOptions={headerOptions}>
+    <Stack.Navigator screenOptions={screenOptionsWithRightIcons} >
       <Stack.Screen 
         name="EmployeeList"
         component={Empleados}
         options={({ navigation }) => getHeaderOptions('Empleados', navigation)}
       />
       <Stack.Screen 
-        name="AgregarEmpleado"
-        component={AgregarEmpleado}
-        options={{ headerTitle: 'Agregar Empleado', headerBackTitle: 'Volver' }}
-      />
-      <Stack.Screen 
         name="VerEmpleado"
         component={VerEmpleado}
-        options={{ headerTitle: 'Perfil del Empleado', headerBackTitle: 'Volver' }}
+        options={{ headerTitle: 'Perfil del Empleado' }}
+      />
+      {/* Grupo de pantallas modales para una mejor UX al crear/editar */}
+      <Stack.Group screenOptions={{ presentation: 'modal' }}>
+      <Stack.Screen 
+        name="AgregarEmpleado"
+        component={AgregarEmpleado}
+        options={{ headerTitle: 'Agregar Empleado' }}
       />
       <Stack.Screen 
         name="EditarEmpleado"
         component={EditarEmpleado}
-        options={{ headerTitle: 'Editar Empleado', headerBackTitle: 'Volver' }}
+        options={{ headerTitle: 'Editar Empleado' }}
       />
+      </Stack.Group>
     </Stack.Navigator>
   );
 }

@@ -1,31 +1,23 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, Alert, Modal } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import CustomAlert from '../../src/components/CustomAlert'; // Importar CustomAlert
 
-const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
+const EmployeeItem = ({ item, navigation, styles, colors, showDeleteAlert }) => {
   const [menuVisible, setMenuVisible] = useState(false);
 
-  const handleDelete = () => {
-    const performDelete = async () => {
-      try {
-        await deleteDoc(doc(db, "employees", item.id));
-        Alert.alert("Éxito", `El empleado ${item.firstName} ${item.lastName} ha sido eliminado.`);
-      } catch (error) {
-        console.error("Error al eliminar el empleado: ", error);
-        Alert.alert("Error", "No se pudo eliminar el empleado.");
-      }
-    };
-
-    Alert.alert(
-      "Eliminar Empleado",
-      `¿Estás seguro de que quieres eliminar a ${item.firstName} ${item.lastName}?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: performDelete },
-      ]
+  const EmployeeAvatar = ({ employee }) => {
+    if (employee.imageUrl) {
+      return <Image source={{ uri: employee.imageUrl }} style={styles.avatar} />;
+    }
+    const initials = `${employee.firstName?.[0] || ''}${employee.lastName?.[0] || ''}`.toUpperCase();
+    return (
+      <View style={[styles.avatar, styles.avatarPlaceholder]}>
+        <Text style={styles.avatarText}>{initials}</Text>
+      </View>
     );
   };
 
@@ -33,9 +25,13 @@ const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
   const statusTextStyle = [styles.statusText, item.status === 'Activo' ? styles.statusTextActive : styles.statusTextInactive];
 
   return (
-    <View style={styles.itemContainer}>
+    // Usamos Pressable para un mejor feedback táctil y para que toda la tarjeta sea navegable
+    <Pressable 
+      style={({ pressed }) => [styles.itemContainer, { opacity: pressed ? 0.8 : 1 }]}
+      onPress={() => navigation.navigate('VerEmpleado', { employeeId: item.id })}
+    >
       <View style={styles.itemHeader}>
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        <EmployeeAvatar employee={item} />
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{`${item.firstName} ${item.lastName}`}</Text>
           <Text style={styles.position}>{item.position}</Text>
@@ -44,11 +40,12 @@ const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
           <Feather name="more-horizontal" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
+
+      {/* Restauramos el cuerpo de la tarjeta con los detalles del empleado */}
       <View style={styles.itemBody}>
         <Text style={styles.detailText}><Text style={styles.detailLabel}>DNI:</Text> {item.dni}</Text>
         <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Teléfono:</Text> {item.telefono}</Text>
         <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Email:</Text> {item.email}</Text>
-        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Dirección:</Text> {item.direccion}</Text>
         <View style={[statusStyle, {alignSelf: 'flex-start', marginTop: 8}]}>
           <Text style={statusTextStyle}>{item.status}</Text>
         </View>
@@ -60,23 +57,26 @@ const EmployeeItem = ({ item, navigation, styles, isDarkMode, colors }) => {
         visible={menuVisible}
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setMenuVisible(false)} />
+        <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)} />
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => { setMenuVisible(false); navigation.navigate('VerEmpleado', { employeeId: item.id }); }}>
-            <Feather name="eye" size={20} style={styles.actionIcon} />
-            <Text style={styles.actionButtonText}>Ver Perfil</Text>
-          </TouchableOpacity>
+          {/* La opción "Ver Perfil" se elimina del menú, ya que la tarjeta es ahora el botón principal para ello */}
           <TouchableOpacity style={styles.actionButton} onPress={() => { setMenuVisible(false); navigation.navigate('EditarEmpleado', { employee: item }); }}>
             <Feather name="edit-2" size={20} style={styles.actionIcon} />
             <Text style={styles.actionButtonText}>Editar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { borderBottomWidth: 0 }]} onPress={() => { setMenuVisible(false); handleDelete(); }}>
+          <TouchableOpacity 
+            style={[styles.actionButton, { borderBottomWidth: 0 }]} 
+            onPress={() => { 
+              setMenuVisible(false); 
+              showDeleteAlert(item); // Usar la función pasada por props para mostrar el CustomAlert
+            }}
+          >
             <Feather name="trash-2" size={20} style={[styles.actionIcon, { color: colors.primary }]} />
             <Text style={[styles.actionButtonText, { color: colors.primary }]}>Eliminar</Text>
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </Pressable>
   );
 };
 
@@ -84,9 +84,35 @@ export default function Empleados() {
   const [searchQuery, setSearchQuery] = useState('');
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', onConfirm: null, onCancel: null });
   const navigation = useNavigation();
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
+
+  // Función para mostrar el CustomAlert de eliminación
+  const showDeleteAlert = (employee) => {
+    setAlertInfo({
+      visible: true,
+      title: "Eliminar Empleado",
+      message: `¿Estás seguro de que quieres eliminar a ${employee.firstName} ${employee.lastName}?`,
+      onCancel: () => setAlertInfo({ visible: false }),
+      onConfirm: () => {
+        setAlertInfo({ visible: false });
+        performDelete(employee);
+      },
+    });
+  };
+
+  // Función que ejecuta la eliminación
+  const performDelete = async (employee) => {
+    try {
+      await deleteDoc(doc(db, "employees", employee.id));
+      // Opcional: mostrar una alerta de éxito
+    } catch (error) {
+      console.error("Error al eliminar el empleado: ", error);
+      setAlertInfo({ visible: true, title: "Error", message: "No se pudo eliminar el empleado." });
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -95,11 +121,10 @@ export default function Empleados() {
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const employeesData = snapshot.docs.map(doc => {
           const data = doc.data();
-          const initials = `${data.firstName?.[0] || ''}${data.lastName?.[0] || ''}`.toUpperCase();
           return { 
             id: doc.id, 
             ...data,
-            avatar: `https://placehold.co/100x100/D9232D/FFFFFF?text=${initials}`
+            // El avatar se manejará en el componente EmployeeAvatar
           };
         });
         setEmployees(employeesData);
@@ -123,30 +148,38 @@ export default function Empleados() {
 
   return (
     <View style={styles.container}>
+      {/* Header fijo con búsqueda y botón de registro */}
+      <View style={styles.header}>
+        <View style={styles.searchContainer}>
+          <Feather name="search" size={20} color={colors.placeholder} />
+          <TextInput
+            placeholder="Buscar por nombre o DNI..."
+            placeholderTextColor={colors.placeholder}
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('AgregarEmpleado')}>
+          <Feather name="plus" size={20} color="#fff" />
+          <Text style={styles.registerButtonText}>Registrar</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={filteredEmployees}
-        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} styles={styles} isDarkMode={isDarkMode} colors={colors} />}
+        renderItem={({ item }) => <EmployeeItem item={item} navigation={navigation} styles={styles} colors={colors} showDeleteAlert={showDeleteAlert} />}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={<Text style={styles.emptyListText}>No se encontraron empleados.</Text>}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <View style={styles.searchContainer}>
-              <Feather name="search" size={20} color={colors.placeholder} />
-              <TextInput
-                placeholder="Buscar por nombre o DNI..."
-                placeholderTextColor={colors.placeholder}
-                style={styles.searchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
-            <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('AgregarEmpleado')}>
-              <Feather name="plus" size={20} color="#fff" />
-              <Text style={styles.registerButtonText}>Registrar Empleado</Text>
-            </TouchableOpacity>
-          </View>
-        }
+      />
+
+      <CustomAlert
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        onConfirm={alertInfo.onConfirm}
+        onCancel={alertInfo.onCancel}
       />
     </View>
   );
@@ -165,29 +198,39 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingTop: 16, // Espacio superior para la lista
   },
   itemContainer: {
     backgroundColor: colors.card,
-    padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDarkMode ? 0.2 : 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   itemHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    padding: 16,
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
     marginRight: 16,
+    backgroundColor: colors.border, // Color de fondo para la imagen real
+  },
+  avatarPlaceholder: {
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
   infoContainer: {
     flex: 1,
@@ -207,6 +250,8 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     padding: 8,
   },
   itemBody: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -217,13 +262,13 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     color: colors.text,
   },
   detailLabel: {
-    fontWeight: '600',
+    fontWeight: '500', // Un peso ligeramente más ligero que el valor
     color: colors.text,
-    opacity: 0.7,
+    opacity: 0.6, // Reducir la opacidad para crear jerarquía
   },
   statusBadge: {
     borderRadius: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12, // Un poco más de padding horizontal
     paddingVertical: 4,
   },
   statusActive: {
@@ -234,17 +279,17 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600', // Un poco más de peso para que resalte en el badge
   },
   statusTextActive: {
-    color: isDarkMode ? '#4ADE80' : '#065F46',
+    color: isDarkMode ? '#6EE7B7' : '#047857', // Tonos de verde más integrados
   },
   statusTextInactive: {
-    color: isDarkMode ? '#FBBF24' : '#92400E',
+    color: isDarkMode ? '#FCD34D' : '#B45309', // Tonos de ámbar/amarillo más integrados
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   actionsContainer: {
     position: 'absolute',
@@ -273,9 +318,13 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     color: colors.text,
   },
   header: {
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 0,
     backgroundColor: colors.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -285,7 +334,7 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 16,
+    flex: 1,
   },
   searchInput: {
     flex: 1,
@@ -295,12 +344,13 @@ const getStyles = (isDarkMode, colors) => StyleSheet.create({
     marginLeft: 8,
   },
   registerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', // Añadido para alinear ícono y texto
+    alignItems: 'center', // Añadido para centrar verticalmente
+    padding: 12,
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 14,
     borderRadius: 8,
+    minWidth: 110, // Ancho mínimo para que no se vea apretado
   },
   registerButtonText: {
     color: '#fff',
