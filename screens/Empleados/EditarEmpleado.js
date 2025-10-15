@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { db } from '../../src/config/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import CustomAlert from '../../src/components/CustomAlert';
+import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 
 export default function EditarEmpleado({ route, navigation }) {
   const { employee } = route.params;
@@ -18,72 +21,128 @@ export default function EditarEmpleado({ route, navigation }) {
   const [telefono, setTelefono] = useState(employee.telefono);
   const [email, setEmail] = useState(employee.email);
   const [direccion, setDireccion] = useState(employee.direccion);
+  const [image, setImage] = useState(employee.imageUrl || null); // Usar imageUrl
   const [loading, setLoading] = useState(false);
-  const [alertVisible, setAlertVisible] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', onConfirm: null, onCancel: null });
+  const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', onConfirm: null, onCancel: null });
 
-  const handleUpdateEmployee = async () => {
-    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion) {
-      setAlertConfig({
-        title: 'Error',
-        message: 'Todos los campos son obligatorios.',
-        onConfirm: () => setAlertVisible(false),
-        onCancel: () => setAlertVisible(false),
+  const isValidEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleUpload = async (uri) => {
+    // Si la imagen no ha cambiado (sigue siendo una URL de Cloudinary), no la subas de nuevo.
+    if (uri.startsWith('http')) {
+      return uri;
+    }
+
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      type: 'image/jpeg',
+      name: 'upload.jpg',
+    });
+    formData.append('upload_preset', cloudinaryConfig.upload_preset);
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloud_name}/image/upload`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      setAlertVisible(true);
+      const data = await response.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setAlertInfo({ visible: true, title: 'Error', message: 'Hubo un problema al subir la nueva imagen.' });
+      return null;
+    }
+  };
+
+  const validateForm = () => {
+    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion || !image) return 'Todos los campos son obligatorios, incluyendo la foto.';
+    if (!/^[a-zA-Z\s]+$/.test(firstName)) return 'El nombre solo debe contener letras y espacios.';
+    if (!/^[a-zA-Z\s]+$/.test(lastName)) return 'El apellido solo debe contener letras y espacios.';
+    if (!/^[0-9]+$/.test(dni)) return 'El DNI debe ser solo numérico.';
+    if (!/^[0-9]+$/.test(telefono)) return 'El teléfono debe ser solo numérico.';
+    if (!isValidEmail(email)) return 'El email no es válido.';
+    return null;
+  };
+
+  const handleUpdateEmployee = () => {
+    const errorMessage = validateForm();
+    if (errorMessage) {
+      setAlertInfo({ visible: true, title: 'Dato inválido', message: errorMessage });
       return;
     }
 
-    setAlertConfig({
+    setAlertInfo({
+      visible: true,
       title: 'Confirmar Edición',
       message: '¿Estás seguro de que quieres guardar los cambios?',
       onConfirm: () => {
-        setAlertVisible(false);
+        setAlertInfo({ visible: false });
         executeUpdate();
       },
-      onCancel: () => setAlertVisible(false),
+      onCancel: () => setAlertInfo({ visible: false }),
     });
-    setAlertVisible(true);
   };
 
   const executeUpdate = async () => {
     setLoading(true);
+    let imageUrl = image;
+
+    if (image && image !== employee.imageUrl) {
+      imageUrl = await handleUpload(image);
+      if (!imageUrl) {
+        setLoading(false);
+        return; // Detener si la carga de la imagen falla
+      }
+    }
+
     const employeeRef = doc(db, "employees", employee.id);
 
     try {
       await updateDoc(employeeRef, {
-        firstName: firstName,
-        lastName: lastName,
-        dni: dni,
-        position: position,
-        telefono: telefono,
-        email: email,
-        direccion: direccion,
+        firstName,
+        lastName,
+        dni,
+        position,
+        telefono,
+        email,
+        direccion,
+        imageUrl, // Actualizar la URL de la imagen
       });
 
-      setAlertConfig({
+      setAlertInfo({
+        visible: true,
         title: 'Éxito',
         message: 'Empleado actualizado correctamente.',
-        onConfirm: () => {
-          setAlertVisible(false);
-          navigation.popToTop();
-        },
-        onCancel: () => {
-          setAlertVisible(false);
-          navigation.popToTop();
-        },
+        onConfirm: () => navigation.popToTop(),
       });
-      setAlertVisible(true);
 
     } catch (error) {
       console.error("Error updating document: ", error);
-      setAlertConfig({
+      setAlertInfo({
+        visible: true,
         title: 'Error',
         message: 'Hubo un problema al actualizar el empleado.',
-        onConfirm: () => setAlertVisible(false),
-        onCancel: () => setAlertVisible(false),
       });
-      setAlertVisible(true);
     } finally {
       setLoading(false);
     }
@@ -92,14 +151,28 @@ export default function EditarEmpleado({ route, navigation }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <CustomAlert
-        visible={alertVisible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        onConfirm={alertConfig.onConfirm}
-        onCancel={alertConfig.onCancel}
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        onConfirm={() => {
+          setAlertInfo({ visible: false });
+          if (alertInfo.onConfirm) alertInfo.onConfirm();
+        }}
+        onCancel={alertInfo.onCancel ? () => setAlertInfo({ visible: false }) : null}
       />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Editar Datos del Empleado</Text>
+
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.imagePreview} />
+          ) : (
+            <>
+              <Feather name="camera" size={24} color={colors.primary} />
+              <Text style={styles.imagePickerText}>Añadir Foto</Text>
+            </>
+          )}
+        </TouchableOpacity>
 
         <View style={styles.inputContainer}>
           <Feather name="user" size={20} style={styles.icon} />
@@ -108,7 +181,7 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="Nombre"
             placeholderTextColor={colors.placeholder}
             value={firstName}
-            onChangeText={setFirstName}
+            onChangeText={text => setFirstName(text.replace(/[^a-zA-Z\s]/g, ''))}
           />
         </View>
 
@@ -119,7 +192,7 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="Apellido"
             placeholderTextColor={colors.placeholder}
             value={lastName}
-            onChangeText={setLastName}
+            onChangeText={text => setLastName(text.replace(/[^a-zA-Z\s]/g, ''))}
           />
         </View>
 
@@ -130,20 +203,26 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="DNI"
             placeholderTextColor={colors.placeholder}
             value={dni}
-            onChangeText={setDni}
+            onChangeText={text => setDni(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
+            maxLength={12}
           />
         </View>
 
         <View style={styles.inputContainer}>
           <Feather name="briefcase" size={20} style={styles.icon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Cargo"
-            placeholderTextColor={colors.placeholder}
-            value={position}
-            onChangeText={setPosition}
-          />
+          <Picker
+            selectedValue={position}
+            style={[styles.input, { paddingLeft: 0 }]}
+            onValueChange={setPosition}
+            dropdownIconColor={colors.text}
+          >
+            <Picker.Item label="Seleccionar cargo..." value="" color={colors.placeholder} />
+            <Picker.Item label="Gerente" value="Gerente" />
+            <Picker.Item label="Secretaria" value="Secretaria" />
+            <Picker.Item label="Tecnico" value="Tecnico" />
+            <Picker.Item label="Obrero" value="Obrero" />
+          </Picker>
         </View>
 
         <View style={styles.inputContainer}>
@@ -153,8 +232,9 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="Teléfono"
             placeholderTextColor={colors.placeholder}
             value={telefono}
-            onChangeText={setTelefono}
-            keyboardType="phone-pad"
+            onChangeText={text => setTelefono(text.replace(/[^0-9]/g, ''))}
+            keyboardType="numeric"
+            maxLength={15}
           />
         </View>
 
@@ -167,6 +247,8 @@ export default function EditarEmpleado({ route, navigation }) {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
 
@@ -207,6 +289,29 @@ const getStyles = (colors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 24,
+  },
+  imagePicker: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  imagePickerText: {
+    marginTop: 8,
+    color: colors.primary,
+    fontSize: 12,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
   },
   title: {
     fontSize: 24,
