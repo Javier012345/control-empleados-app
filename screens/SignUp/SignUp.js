@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../src/config/firebaseConfig';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../../src/config/firebaseConfig';
 import { useTheme } from '@react-navigation/native';
-import CustomAlert from '../src/components/CustomAlert';
-import { useAppContext } from '../src/context/AppContext';
+import CustomAlert from '../../src/components/CustomAlert';
+import { useAppContext } from '../../src/context/AppContext';
+import { getStyles } from './SignUp.styles';
 
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
@@ -108,6 +109,7 @@ export default function SignUp({ navigation }) {
         firstName: fullName,
         lastName: lastName,
         email: email,
+        createdAt: serverTimestamp(), // Guardar la fecha de registro
       });
 
       await signOut(auth);
@@ -146,7 +148,7 @@ export default function SignUp({ navigation }) {
       />
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
   <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-    <Image source={require('../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
+    <Image source={require('../../assets/logo-nuevas-energias-v2.png')} style={styles.logo} resizeMode="contain" />
     <Text style={styles.title}>Registro</Text>
     <Text style={styles.description}>Crea una cuenta para empezar a utilizar la aplicación.</Text>
 
@@ -298,104 +300,3 @@ export default function SignUp({ navigation }) {
     </>
   );
 }
-
-const getStyles = (isDarkMode, colors) => StyleSheet.create({
-  kbView: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    flexGrow: 1,
-    // justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  logo: {
-    width: 250,
-    height: 250,
-    marginBottom: 0,
-    marginTop: -25,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 16,
-    color: colors.text,
-    opacity: 0.7,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  inputWrapper: {
-    width: '100%',
-    marginBottom: 12,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    width: '100%',
-    height: 50,
-  },
-  inputError: {
-    borderColor: colors.primary,
-  },
-  icon: {
-    color: colors.text,
-    opacity: 0.6,
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    fontSize: 16,
-    color: colors.text,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 16,
-    width: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: colors.text,
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  signInText: {
-    marginTop: 24,
-    color: colors.text,
-    opacity: 0.7,
-    fontSize: 14,
-  },
-  signInLink: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  label: {
-  alignSelf: 'flex-start',
-  fontSize: 16,
-  fontWeight: 'bold',
-  marginBottom: 5,
-  marginTop: 15,
-  color: colors.text,
-  marginLeft: 4,
-},
-});

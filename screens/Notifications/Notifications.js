@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTheme } from '@react-navigation/native';
+import { getStyles } from './Notifications.styles';
 
 const Notifications = () => {
   const { colors } = useTheme();
@@ -13,19 +14,5 @@ const Notifications = () => {
     </View>
   );
 };
-
-const getStyles = (colors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  text: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-});
 
 export default Notifications;
