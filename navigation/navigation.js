@@ -7,14 +7,15 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';  
 import { FontAwesome } from '@expo/vector-icons';
 import { useAppContext } from '../src/context/AppContext'; // 1. Importar el hook del contexto
-import Login from '../screens/Login';
-import SignUp from '../screens/SignUp';
-import Home from '../screens/Home';
+import Login from '../screens/Login/Login';
+import SignUp from '../screens/SignUp/SignUp';
+import Home from '../screens/Home/Home';
 import Empleados from '../screens/Empleados/Empleados'; // Ruta y nombre actualizados
 import AgregarEmpleado from '../screens/Empleados/AgregarEmpleado'; // Ruta y nombre actualizados
 import VerEmpleado from '../screens/Empleados/VerEmpleado';
 import EditarEmpleado from '../screens/Empleados/EditarEmpleado';
-import Notifications from '../screens/Notifications'; // Importar la nueva pantalla
+import Notifications from '../screens/Notifications/Notifications'; // Importar la nueva pantalla
+import PerfilUsuario from '../screens/Usuarios/PerfilUsuario'; // Importar la pantalla de perfil
 import CustomAlert from '../src/components/CustomAlert';
 
 const Stack = createStackNavigator();
@@ -53,6 +54,9 @@ function HeaderRightIcons({ navigation }) {
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 20 }}>
         <FontAwesome name="bell-o" size={24} color={colors.text} />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.navigate('PerfilUsuario')}>
+        <FontAwesome name="user-circle-o" size={24} color={colors.text} />
       </TouchableOpacity>
 
     </View>
@@ -126,12 +130,17 @@ function HomeStack({ navigation }) {
       <Stack.Screen 
         name="Dashboard" 
         component={Home}
-        options={getHeaderOptions('Inicio', navigation)}
+        options={({ navigation }) => getHeaderOptions('Inicio', navigation)}
       />
       <Stack.Screen 
         name="Notifications"
         component={Notifications}
         options={{ headerTitle: 'Notificaciones' }}
+      />
+      <Stack.Screen 
+        name="PerfilUsuario"
+        component={PerfilUsuario}
+        options={{ headerTitle: 'Mi Perfil' }}
       />
     </Stack.Navigator>
   );
@@ -155,6 +164,11 @@ function EmployeesStack({ navigation }) {
         name="VerEmpleado"
         component={VerEmpleado}
         options={{ headerTitle: 'Perfil del Empleado' }}
+      />
+      <Stack.Screen 
+        name="PerfilUsuario"
+        component={PerfilUsuario}
+        options={{ headerTitle: 'Mi Perfil' }}
       />
       {/* Grupo de pantallas modales para una mejor UX al crear/editar */}
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
@@ -213,7 +227,7 @@ function Navigation() {
               >
                 <Drawer.Screen name="Inicio" component={HomeStack} options={{ title: 'Inicio' }} />
                 <Drawer.Screen name="Empleados" component={EmployeesStack} />
-                <Drawer.Screen name="Sanciones" component={HomeStack} /> 
+                <Drawer.Screen name="Sanciones" component={HomeStack} />
                 <Drawer.Screen name="Horarios" component={HomeStack} />
                 <Drawer.Screen name="Asistencias" component={HomeStack} />
                 <Drawer.Screen name="Recibos" component={HomeStack} />
