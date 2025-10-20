@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useTheme } from '@react-navigation/native';
 import { db } from '../../src/config/firebaseConfig';
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import { useAppContext } from '../../src/context/AppContext';
 import CustomAlert from '../../src/components/CustomAlert'; // Importar CustomAlert
 import { getStyles } from './Empleados.styles';
 
@@ -89,6 +90,7 @@ export default function Empleados() {
   const navigation = useNavigation();
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
+  const { addActivity } = useAppContext();
 
   // Función para mostrar el CustomAlert de eliminación
   const showDeleteAlert = (employee) => {
@@ -109,6 +111,7 @@ export default function Empleados() {
     try {
       await deleteDoc(doc(db, "employees", employee.id));
       // Opcional: mostrar una alerta de éxito
+      addActivity({ type: 'delete_employee', text: `Empleado ${employee.firstName} ${employee.lastName} fue eliminado.`, time: new Date() });
     } catch (error) {
       console.error("Error al eliminar el empleado: ", error);
       setAlertInfo({ visible: true, title: "Error", message: "No se pudo eliminar el empleado." });

@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useTheme } from '@react-navigation/native';
+import { useAppContext } from '../../src/context/AppContext';
 import { collection, query, where, Timestamp, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../src/config/firebaseConfig';
 import { getStyles } from './Home.styles';
@@ -53,7 +54,8 @@ const formatTime = (date) => {
 };
 
 export default function Home() {
-  const [recentActivity, setRecentActivity] = useState([]);
+  // Usar recentActivity desde el contexto para mantener la actividad en memoria (no depende de Firestore)
+  const { recentActivity } = useAppContext();
   const [stats, setStats] = useState({
     totalEmployees: 0,
     newHires: 0,
@@ -72,7 +74,7 @@ export default function Home() {
     const employeesCollection = collection(db, 'employees');
     const sanctionsCollection = collection(db, 'sanciones');
     const attendancesCollection = collection(db, 'asistencias');
-    const activityCollection = collection(db, 'activity');
+  // No usamos la colección 'activity' de Firestore; la actividad se mantiene en AppContext
 
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -110,15 +112,7 @@ export default function Home() {
       onSnapshot(query(employeesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, newHires: snapshot.size }))),
       onSnapshot(query(sanctionsCollection, where('createdAt', '>=', Timestamp.fromDate(startOfMonth))), snapshot => setStats(prev => ({ ...prev, monthlySanctions: snapshot.size }))),
       onSnapshot(query(attendancesCollection, where('createdAt', '>=', Timestamp.fromDate(startOfDay))), snapshot => setStats(prev => ({ ...prev, todayAttendances: snapshot.size }))),
-      // Suscripción en tiempo real a la actividad reciente
-      onSnapshot(query(activityCollection, orderBy('time', 'desc'), limit(5)), snapshot => {
-        const activities = snapshot.docs.map(doc => {
-          const data = doc.data();
-          // Convertir Timestamp de Firestore a Date de JS
-          return { ...data, id: doc.id, time: data.time.toDate() };
-        });
-        setRecentActivity(activities);
-      }),
+      // La actividad reciente proviene del AppContext (estado local). No es necesario suscribirse a Firestore.
     ];
 
     setLoading(false);

@@ -6,6 +6,7 @@ import { useTheme } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { db } from '../../src/config/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
+import { useAppContext } from '../../src/context/AppContext';
 import CustomAlert from '../../src/components/CustomAlert';
 import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 import { getStyles } from './EditarEmpleado.styles';
@@ -14,6 +15,7 @@ export default function EditarEmpleado({ route, navigation }) {
   const { employee } = route.params;
   const { colors } = useTheme();
   const styles = getStyles(colors);
+  const { addActivity } = useAppContext();
 
   const [firstName, setFirstName] = useState(employee.firstName);
   const [lastName, setLastName] = useState(employee.lastName);
@@ -136,6 +138,9 @@ export default function EditarEmpleado({ route, navigation }) {
         message: 'Empleado actualizado correctamente.',
         onConfirm: () => navigation.popToTop(),
       });
+
+      // Registrar actividad localmente para que Home la muestre
+      addActivity({ type: 'update_employee', text: `Empleado ${firstName} ${lastName} ha sido actualizado.`, time: new Date() });
 
     } catch (error) {
       console.error("Error updating document: ", error);
