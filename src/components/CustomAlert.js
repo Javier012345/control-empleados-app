@@ -2,16 +2,19 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 
-const CustomAlert = ({ visible, title, message, onConfirm, onCancel }) => {
+const CustomAlert = ({ visible, title, message, onConfirm, onCancel, onClose }) => {
   const { colors } = useTheme();
   const styles = getStyles(colors);
+
+  // Usamos onConfirm si existe, si no, usamos onClose. Esto hace el componente más flexible.
+  const handleConfirm = onConfirm || onClose;
 
   return (
     <Modal
       animationType="none"
       transparent={true}
       visible={visible}
-      onRequestClose={onCancel}
+      onRequestClose={handleConfirm} // Permite cerrar con el botón "atrás" de Android
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
@@ -21,7 +24,7 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel }) => {
             
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.primary }]}
-              onPress={onConfirm}
+              onPress={handleConfirm}
             >
               <Text style={styles.textStyle}>Cerrar</Text>
             </TouchableOpacity>
