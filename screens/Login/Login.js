@@ -40,7 +40,7 @@ return (
         visible={alert.visible}
         title={alert.title}
         message={alert.message}
-        onClose={() => setAlert({ visible: false, title: '', message: '' })}
+        onConfirm={() => setAlert({ visible: false, title: '', message: '' })}
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

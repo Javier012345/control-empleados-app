@@ -8,7 +8,7 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel }) => {
 
   return (
     <Modal
-      animationType="fade"
+      animationType="none"
       transparent={true}
       visible={visible}
       onRequestClose={onCancel}
@@ -18,17 +18,12 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel }) => {
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{message}</Text>
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-            >
-              <Text style={[styles.textStyle, styles.cancelButtonText]}>Cancelar</Text>
-            </TouchableOpacity>
+            
             <TouchableOpacity
               style={[styles.button, { backgroundColor: colors.primary }]}
               onPress={onConfirm}
             >
-              <Text style={styles.textStyle}>Aceptar</Text>
+              <Text style={styles.textStyle}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
