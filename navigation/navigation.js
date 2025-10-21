@@ -16,6 +16,7 @@ import VerEmpleado from '../screens/Empleados/VerEmpleado';
 import EditarEmpleado from '../screens/Empleados/EditarEmpleado';
 import Notifications from '../screens/Notifications/Notifications'; // Importar la nueva pantalla
 import PerfilUsuario from '../screens/Usuarios/PerfilUsuario'; // Importar la pantalla de perfil
+import EditarPerfilUsuario from '../screens/Usuarios/EditarPerfilUsuario';
 import CustomAlert from '../src/components/CustomAlert';
 
 const Stack = createStackNavigator();
@@ -140,7 +141,23 @@ function HomeStack({ navigation }) {
       <Stack.Screen 
         name="PerfilUsuario"
         component={PerfilUsuario}
-        options={{ headerTitle: 'Mi Perfil' }}
+        options={({ navigation, route }) => ({
+          headerTitle: 'Mi Perfil',
+          headerRight: () => {
+            const { theme } = useAppContext();
+            const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+            return (
+              <TouchableOpacity onPress={() => navigation.navigate('EditarPerfilUsuario', { user: route.params?.user })} style={{ marginRight: 20 }}>
+                <FontAwesome name="pencil" size={22} color={colors.text} />
+              </TouchableOpacity>
+            );
+          },
+        })}
+      />
+      <Stack.Screen 
+        name="EditarPerfilUsuario"
+        component={EditarPerfilUsuario}
+        options={{ headerTitle: 'Editar Perfil' }}
       />
     </Stack.Navigator>
   );
@@ -168,7 +185,18 @@ function EmployeesStack({ navigation }) {
       <Stack.Screen 
         name="PerfilUsuario"
         component={PerfilUsuario}
-        options={{ headerTitle: 'Mi Perfil' }}
+        options={({ navigation, route }) => ({
+          headerTitle: 'Mi Perfil',
+          headerRight: () => {
+            const { theme } = useAppContext();
+            const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+            return (
+              <TouchableOpacity onPress={() => navigation.navigate('EditarPerfilUsuario', { user: route.params?.user })} style={{ marginRight: 20 }}>
+                <FontAwesome name="pencil" size={22} color={colors.text} />
+              </TouchableOpacity>
+            );
+          },
+        })}
       />
       {/* Grupo de pantallas modales para una mejor UX al crear/editar */}
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
