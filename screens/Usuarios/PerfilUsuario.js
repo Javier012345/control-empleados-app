@@ -8,13 +8,21 @@ import { auth, db } from '../../src/config/firebaseConfig';
 import { getStyles } from './PerfilUsuario.styles';
 import CustomAlert from '../../src/components/CustomAlert';
 
-const InfoRow = ({ icon, label, value, styles, isSelectable = false, isLast = false }) => (
+const InfoRow = ({ icon, label, value, styles, isSelectable = false, isLast = false, onLongPress }) => (
   <View style={[styles.infoItem, isLast && { borderBottomWidth: 0 }]}>
     <Feather name={icon} size={20} style={styles.icon} />
     <View style={styles.infoTextContainer}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue} selectable={isSelectable}>
-        {value || 'No disponible'}
+      <Text 
+        style={styles.infoValue} 
+        selectable={isSelectable}
+        onLongPress={onLongPress}
+      >
+        {value ? (
+          value.length > 35 ? `${value.substring(0, 35)}...` : value
+        ) : (
+          'No disponible'
+        )}
       </Text>
     </View>
   </View>
@@ -127,16 +135,14 @@ export default function PerfilUsuario({ navigation, route }) {
         <View style={styles.header}>
           <UserAvatar user={user} styles={styles} />
           <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
-          <Text style={styles.email}>{user.email}</Text>
         </View>
 
         <View style={styles.body}>
           <Text style={styles.sectionTitle}>Información General</Text>
           <View style={styles.card}>
+            <InfoRow icon="mail" label="Correo Electrónico" value={user.email} styles={styles} isSelectable />
             <InfoRow icon="briefcase" label="Cargo" value={user.position || 'Administrador'} styles={styles} />
-            <InfoRow icon="phone" label="Teléfono" value={user.phone} styles={styles} />
-            <InfoRow icon="shield" label="Rol" value={user.role || 'Usuario'} styles={styles} />
-            <InfoRow icon="user-check" label="ID de Usuario" value={user.uid} styles={styles} isSelectable isLast />
+            <InfoRow icon="phone" label="Teléfono" value={user.phone} styles={styles} isLast />
           </View>
 
           <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Detalles de la Cuenta</Text>
