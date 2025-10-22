@@ -78,12 +78,12 @@ export default function EditarPerfilUsuario({ route, navigation }) {
 
   const handleSavePress = () => {
     if (!formData.firstName || !formData.lastName) {
-        setInfoAlert({ visible: true, title: 'Campos requeridos', message: 'El nombre y el apellido no pueden estar vacíos.' });
+        setInfoAlert({ visible: true, title: 'Campos requeridos', message: 'El nombre y el apellido no pueden estar vacíos.', confirmButtonText: 'Aceptar'});
         return;
     }
 
     if (!checkForChanges()) {
-        setInfoAlert({ visible: true, title: 'Sin cambios', message: 'No has realizado ninguna modificación.' });
+        setInfoAlert({ visible: true, title: 'Sin cambios', message: 'No has realizado ninguna modificación.', confirmButtonText: 'Aceptar'});
         return;
     }
 
@@ -214,6 +214,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
         visible: true,
         title: 'Éxito',
         message: 'Tu perfil ha sido actualizado correctamente.',
+        confirmButtonText: 'Aceptar',
         onConfirm: () => navigation.navigate('PerfilUsuario', { updated: Date.now() }),
       });
       
@@ -305,6 +306,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
         visible={confirmAlertVisible}
         title="Confirmar Cambios"
         message="¿Estás seguro de que quieres guardar las modificaciones?"
+        
         onConfirm={executeSave}
         onCancel={() => setConfirmAlertVisible(false)}
       />
@@ -312,6 +314,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
         visible={infoAlert.visible}
         title={infoAlert.title}
         message={infoAlert.message}
+        confirmButtonText="Aceptar"
         onConfirm={() => {
           const callback = infoAlert.onConfirm;
           setInfoAlert({ visible: false, title: '', message: '', onConfirm: null });

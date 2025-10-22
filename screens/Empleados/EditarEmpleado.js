@@ -72,7 +72,7 @@ export default function EditarEmpleado({ route, navigation }) {
       return data.secure_url;
     } catch (error) {
       console.error('Error uploading image:', error);
-      setAlertInfo({ visible: true, title: 'Error', message: 'Hubo un problema al subir la nueva imagen.' });
+      setAlertInfo({ visible: true, title: 'Error', message: 'Hubo un problema al subir la nueva imagen.', confirmButtonText: 'Aceptar' });
       return null;
     }
   };
@@ -87,10 +87,28 @@ export default function EditarEmpleado({ route, navigation }) {
     return null;
   };
 
+  const checkForChanges = () => {
+    return (
+      firstName.trim() !== (employee.firstName || '').trim() ||
+      lastName.trim() !== (employee.lastName || '').trim() ||
+      dni.trim() !== (employee.dni || '').trim() ||
+      position !== (employee.position || '') ||
+      telefono.trim() !== (employee.telefono || '').trim() ||
+      email.trim() !== (employee.email || '').trim() ||
+      direccion.trim() !== (employee.direccion || '').trim() ||
+      image !== (employee.imageUrl || null)
+    );
+  };
+
   const handleUpdateEmployee = () => {
     const errorMessage = validateForm();
     if (errorMessage) {
-      setAlertInfo({ visible: true, title: 'Dato inválido', message: errorMessage });
+      setAlertInfo({ visible: true, title: 'Dato inválido', message: errorMessage, confirmButtonText: 'Aceptar' });
+      return;
+    }
+
+    if (!checkForChanges()) {
+      setAlertInfo({ visible: true, title: 'Sin cambios', message: 'No has realizado ninguna modificación.', confirmButtonText: 'Aceptar' });
       return;
     }
 
@@ -136,6 +154,7 @@ export default function EditarEmpleado({ route, navigation }) {
         visible: true,
         title: 'Éxito',
         message: 'Empleado actualizado correctamente.',
+        confirmButtonText: 'Aceptar',
         onConfirm: () => navigation.popToTop(),
       });
 
@@ -148,6 +167,7 @@ export default function EditarEmpleado({ route, navigation }) {
         visible: true,
         title: 'Error',
         message: 'Hubo un problema al actualizar el empleado.',
+        confirmButtonText: 'Aceptar',
       });
     } finally {
       setLoading(false);
@@ -160,11 +180,13 @@ export default function EditarEmpleado({ route, navigation }) {
         visible={alertInfo.visible}
         title={alertInfo.title}
         message={alertInfo.message}
+        confirmButtonText={alertInfo.confirmButtonText} // Pasa el texto personalizado
         onConfirm={() => {
-          setAlertInfo({ visible: false });
-          if (alertInfo.onConfirm) alertInfo.onConfirm();
+          const callback = alertInfo.onConfirm;
+          setAlertInfo({ visible: false }); // Cierra la alerta primero
+          if (callback) callback(); // Luego ejecuta la acción si existe
         }}
-        onCancel={alertInfo.onCancel ? () => setAlertInfo({ visible: false }) : null}
+        onCancel={alertInfo.onCancel}
       />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Editar Datos del Empleado</Text>
