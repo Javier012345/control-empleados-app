@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
@@ -8,14 +8,42 @@ import { auth, db } from '../../src/config/firebaseConfig';
 import { getStyles } from './PerfilUsuario.styles';
 import CustomAlert from '../../src/components/CustomAlert';
 
-const UserAvatar = ({ user, styles }) => {
-  // Por ahora, usamos iniciales ya que los usuarios no tienen `imageUrl`.
-  const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
-  return (
-    <View style={[styles.avatar, styles.avatarPlaceholder]}>
-      <Text style={styles.avatarText}>{initials}</Text>
+const InfoRow = ({ icon, label, value, styles, isSelectable = false, isLast = false, onLongPress }) => (
+  <View style={[styles.infoItem, isLast && { borderBottomWidth: 0 }]}>
+    <Feather name={icon} size={20} style={styles.icon} />
+    <View style={styles.infoTextContainer}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text 
+        style={styles.infoValue} 
+        selectable={isSelectable}
+        onLongPress={onLongPress}
+      >
+        {value ? (
+          value.length > 35 ? `${value.substring(0, 35)}...` : value
+        ) : (
+          'No disponible'
+        )}
+      </Text>
     </View>
-  );
+  </View>
+);
+
+const UserAvatar = ({ user, styles }) => {
+  if (user?.imageUrl) {
+    return (
+      <Image 
+        source={{ uri: user.imageUrl }} 
+        style={styles.avatar} 
+      />
+    );
+  } else {
+    const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
+    return (
+      <View style={[styles.avatar, styles.avatarPlaceholder]}>
+        <Text style={styles.avatarText}>{initials}</Text>
+      </View>
+    );
+  }
 };
 
 const formatDate = (dateStringOrTimestamp) => {
@@ -37,13 +65,13 @@ const formatDate = (dateStringOrTimestamp) => {
   }).format(date);
 };
 
-export default function PerfilUsuario({ navigation }) {
+export default function PerfilUsuario({ navigation, route }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
   const [alertVisible, setAlertVisible] = useState(false);
-
+  
   useEffect(() => {
     const fetchUserData = async () => {
       const currentUser = auth.currentUser;
@@ -57,7 +85,12 @@ export default function PerfilUsuario({ navigation }) {
             const firestoreData = docSnap.data();
             const authData = auth.currentUser;
             
-            setUser({ id: docSnap.id, ...firestoreData, ...authData.metadata, uid: authData.uid });
+            const userData = { id: docSnap.id, ...firestoreData, ...authData.metadata, uid: authData.uid, email: authData.email };
+            setUser(userData);
+
+            // Pasar los datos del usuario a los parámetros de la ruta para que el botón de editar los tenga
+            navigation.setParams({ user: userData });
+
           } else {
             console.log("No se encontraron datos del usuario!");
           }
@@ -72,7 +105,10 @@ export default function PerfilUsuario({ navigation }) {
     };
 
     fetchUserData();
-  }, []);
+    // El listener se activa cuando la pantalla vuelve a tener foco
+    const unsubscribe = navigation.addListener('focus', fetchUserData);
+    return unsubscribe;
+  }, [navigation, route.params?.updated]); // Se re-ejecuta si volvemos con el parámetro 'updated'
 
   const handleLogout = () => setAlertVisible(true);
 
@@ -99,45 +135,20 @@ export default function PerfilUsuario({ navigation }) {
         <View style={styles.header}>
           <UserAvatar user={user} styles={styles} />
           <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
-          <Text style={styles.email}>{user.email}</Text>
         </View>
 
         <View style={styles.body}>
           <Text style={styles.sectionTitle}>Información General</Text>
           <View style={styles.card}>
-            <View style={styles.infoItem}>
-              <Feather name="shield" size={20} style={styles.icon} />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Rol</Text>
-                {/* El rol se puede añadir a futuro en la base de datos del usuario */}
-                <Text style={styles.infoValue}>{user.role || 'Usuario'}</Text>
-              </View>
-            </View>
-            <View style={[styles.infoItem, { borderBottomWidth: 0 }]}>
-              <Feather name="user-check" size={20} style={styles.icon} />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>ID de Usuario</Text>
-                <Text style={styles.infoValue} selectable>{user.uid}</Text>
-              </View>
-            </View>
+            <InfoRow icon="mail" label="Correo Electrónico" value={user.email} styles={styles} isSelectable />
+            <InfoRow icon="briefcase" label="Cargo" value={user.position || 'Administrador'} styles={styles} />
+            <InfoRow icon="phone" label="Teléfono" value={user.phone} styles={styles} isLast />
           </View>
 
           <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Detalles de la Cuenta</Text>
           <View style={styles.card}>
-            <View style={styles.infoItem}>
-              <Feather name="log-in" size={20} style={styles.icon} />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Último inicio de sesión</Text>
-                <Text style={styles.infoValue}>{formatDate(user.lastSignInTime)}</Text>
-              </View>
-            </View>
-            <View style={[styles.infoItem, { borderBottomWidth: 0 }]}>
-              <Feather name="calendar" size={20} style={styles.icon} />
-              <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Miembro desde</Text>
-                <Text style={styles.infoValue}>{formatDate(user.creationTime)}</Text>
-              </View>
-            </View>
+            <InfoRow icon="log-in" label="Último inicio de sesión" value={formatDate(user.lastSignInTime)} styles={styles} />
+            <InfoRow icon="calendar" label="Miembro desde" value={formatDate(user.creationTime)} styles={styles} isLast />
           </View>
         </View>
 
