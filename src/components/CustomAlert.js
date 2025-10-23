@@ -6,12 +6,15 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, confirmButt
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
+  // Usamos onConfirm si existe, si no, usamos onClose. Esto hace el componente más flexible.
+  const handleConfirm = onConfirm || onClose;
+
   return (
     <Modal
       animationType="none"
       transparent={true}
       visible={visible}
-      onRequestClose={onCancel}
+      onRequestClose={handleConfirm} // Permite cerrar con el botón "atrás" de Android
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
@@ -29,7 +32,7 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, confirmButt
             <TouchableOpacity
               // El botón de confirmar ya no necesita estilos especiales para alinearse.
               style={[styles.button, { backgroundColor: colors.primary }]}
-              onPress={onConfirm}
+              onPress={handleConfirm}
             >
               <Text style={styles.textStyle}>{confirmButtonText || (onCancel ? 'Aceptar' : 'Cerrar')}</Text>
             </TouchableOpacity>
