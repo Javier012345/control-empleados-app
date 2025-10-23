@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 
-const CustomAlert = ({ visible, title, message, onConfirm, onCancel, onClose }) => {
+const CustomAlert = ({ visible, title, message, onConfirm, onCancel, confirmButtonText, cancelButtonText }) => {
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
