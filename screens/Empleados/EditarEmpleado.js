@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import { db } from '../../src/config/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAppContext } from '../../src/context/AppContext';
 import CustomAlert from '../../src/components/CustomAlert';
+import CustomActionSheet from '../../screens/Usuarios/CustomActionSheet';
 import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 import { getStyles } from './EditarEmpleado.styles';
 
@@ -24,30 +25,84 @@ export default function EditarEmpleado({ route, navigation }) {
   const [telefono, setTelefono] = useState(employee.telefono);
   const [email, setEmail] = useState(employee.email);
   const [direccion, setDireccion] = useState(employee.direccion);
-  const [image, setImage] = useState(employee.imageUrl || null); // Usar imageUrl
+  const [image, setImage] = useState(employee.imageUrl || null);
   const [loading, setLoading] = useState(false);
   const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', onConfirm: null, onCancel: null });
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [imagePickerAction, setImagePickerAction] = useState(null);
+
+  useEffect(() => { if (imagePickerAction) { pickImage(imagePickerAction); setImagePickerAction(null); } }, [imagePickerAction]);
 
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const pickImage = async (source) => {
+    try {
+      const mediaTypes = ImagePicker.MediaTypeOptions?.Images ?? 'Images';
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const options = {
+        mediaTypes,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      };
+
+      let result;
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso denegado', 'Se necesita permiso para acceder a la cámara.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync(options);
+      } else { // gallery
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso denegado', 'Se necesita permiso para acceder a la galería.');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result) {
+        Alert.alert('Error', 'No se obtuvo resultado del selector de imágenes.');
+        return;
+      }
+
+      const canceled = result.canceled ?? result.cancelled ?? false;
+      const assets = result.assets ?? (result.uri ? [{ uri: result.uri }] : null);
+
+      if (!canceled && assets && assets.length > 0) {
+        setImage(assets[0].uri);
+      } else {
+        console.log('pickImage: cancelado o sin assets', result);
+      }
+    } catch (err) {
+      console.error('Error seleccionando imagen:', err);
+      Alert.alert('Error seleccionando imagen', String(err));
     }
   };
 
+  const imagePickerOptions = [
+    { label: 'Seleccionar Imagen', isTitle: true },
+    { 
+      label: 'Tomar Foto', 
+      icon: 'camera', 
+      onPress: () => { setActionSheetVisible(false); setImagePickerAction('camera'); }
+    },
+    {
+      label: 'Elegir de la Galería', 
+      icon: 'image',
+      onPress: () => { setActionSheetVisible(false); setImagePickerAction('gallery'); }
+    },
+    { label: 'Cancelar', isCancel: true, onPress: () => setActionSheetVisible(false) },
+  ];
+
+  const handleImagePick = () => setActionSheetVisible(true);
+
   const handleUpload = async (uri) => {
-    // Si la imagen no ha cambiado (sigue siendo una URL de Cloudinary), no la subas de nuevo.
     if (uri.startsWith('http')) {
       return uri;
     }
@@ -132,7 +187,7 @@ export default function EditarEmpleado({ route, navigation }) {
       imageUrl = await handleUpload(image);
       if (!imageUrl) {
         setLoading(false);
-        return; // Detener si la carga de la imagen falla
+        return;
       }
     }
 
@@ -147,7 +202,7 @@ export default function EditarEmpleado({ route, navigation }) {
         telefono,
         email,
         direccion,
-        imageUrl, // Actualizar la URL de la imagen
+        imageUrl,
       });
 
       setAlertInfo({
@@ -158,7 +213,6 @@ export default function EditarEmpleado({ route, navigation }) {
         onConfirm: () => navigation.popToTop(),
       });
 
-      // Registrar actividad localmente para que Home la muestre
       addActivity({ type: 'update_employee', text: `Empleado ${firstName} ${lastName} ha sido actualizado.`, time: new Date() });
 
     } catch (error) {
@@ -175,32 +229,37 @@ export default function EditarEmpleado({ route, navigation }) {
   };
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <CustomAlert
         visible={alertInfo.visible}
         title={alertInfo.title}
         message={alertInfo.message}
-        confirmButtonText={alertInfo.confirmButtonText} // Pasa el texto personalizado
+        confirmButtonText={alertInfo.confirmButtonText}
         onConfirm={() => {
           const callback = alertInfo.onConfirm;
-          setAlertInfo({ visible: false }); // Cierra la alerta primero
-          if (callback) callback(); // Luego ejecuta la acción si existe
+          setAlertInfo({ visible: false });
+          if (callback) callback();
         }}
         onCancel={alertInfo.onCancel}
       />
       <View style={styles.formContainer}>
         <Text style={styles.title}>Editar Datos del Empleado</Text>
 
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.imagePreview} />
-          ) : (
-            <>
-              <Feather name="camera" size={24} color={colors.primary} />
-              <Text style={styles.imagePickerText}>Añadir Foto</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={styles.avatarContainer}>
+            <TouchableOpacity onPress={handleImagePick}>
+              {image ? (
+                <Image source={{ uri: image }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <Feather name="camera" size={30} color="#FFFFFF" />
+                </View>
+              )}
+              <View style={styles.editIcon}>
+                <Feather name="edit-2" size={14} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          </View>
 
         <View style={styles.inputContainer}>
           <Feather name="user" size={20} style={styles.icon} />
@@ -300,5 +359,11 @@ export default function EditarEmpleado({ route, navigation }) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    <CustomActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        options={imagePickerOptions}
+      />
+    </>
   );
 }

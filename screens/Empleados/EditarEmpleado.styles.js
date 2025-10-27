@@ -15,28 +15,31 @@ export const getStyles = (colors) => StyleSheet.create({
     borderRadius: 12,
     padding: 24,
   },
-  imagePicker: {
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.background,
+  },
+  avatarPlaceholder: {
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 24,
+    borderWidth: 3,
+    borderColor: colors.card,
+  },
+  editIcon: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    padding: 6,
     borderWidth: 2,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-  },
-  imagePickerText: {
-    marginTop: 8,
-    color: colors.primary,
-    fontSize: 12,
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 60,
+    borderColor: colors.card,
   },
   title: {
     fontSize: 24,
