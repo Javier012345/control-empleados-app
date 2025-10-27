@@ -117,7 +117,7 @@ export default function SignUp({ navigation }) {
         visible: true,
         title: "Registro exitoso",
         message: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
-        onClose: () => {
+        onConfirm: () => {
           setAlert({ visible: false, title: '', message: '' });
           navigation.navigate('Login');
         }
@@ -144,7 +144,7 @@ export default function SignUp({ navigation }) {
         visible={alert.visible}
         title={alert.title}
         message={alert.message}
-        onClose={alert.onClose || (() => setAlert({ visible: false, title: '', message: '' }))}
+        onConfirm={alert.onConfirm || (() => setAlert({ visible: false, title: '', message: '' }))}
       />
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
   <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">

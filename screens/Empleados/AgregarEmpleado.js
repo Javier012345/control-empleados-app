@@ -78,11 +78,11 @@ export default function AgregarEmpleado({ navigation }) {
 
   const handleSaveEmployee = async () => {
     if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion || !image) {
-      setAlertInfo({ visible: true, title: "Campos requeridos", message: "Todos los campos son obligatorios, incluyendo la foto." });
+      setAlertInfo({ visible: true, title: "Campos requeridos", message: "Todos los campos son obligatorios, incluyendo la foto.", confirmButtonText: "Aceptar" });
       return;
     }
     if (!/^[a-zA-Z\s]+$/.test(firstName)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El nombre solo debe contener letras y espacios." });
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El nombre solo debe contener letras y espacios.", confirmButtonText: "Aceptar" });
       return;
     }
 
@@ -91,20 +91,23 @@ export default function AgregarEmpleado({ navigation }) {
       return;
     }
     if (!/^[0-9]+$/.test(dni)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El DNI debe ser solo numérico." });
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El DNI debe ser solo numérico.", confirmButtonText: "Aceptar" });
       return;
     }
     if (!/^[0-9]+$/.test(telefono)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El teléfono debe ser solo numérico." });
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El teléfono debe ser solo numérico.", confirmButtonText: "Aceptar" });
       return;
     }
     if (!isValidEmail(email)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El email no es válido." });
+      setAlertInfo({ visible: true, title: "Dato inválido", message: "El email no es válido.", confirmButtonText: "Aceptar" });
       return;
     }
 
     setLoading(true);
     let imageUrl = '';
+    // Asegurarse de que cualquier alerta de error durante la subida de imagen también tenga el botón "Aceptar"
+    // Esto es una mejora general para la consistencia de las alertas de error.
+    const errorAlertProps = { confirmButtonText: "Aceptar" };
 
     if (image) {
       imageUrl = await handleUpload(image);
@@ -138,12 +141,13 @@ export default function AgregarEmpleado({ navigation }) {
         visible: true,
         title: "Éxito",
         message: "Empleado registrado correctamente.",
+        confirmButtonText: "Aceptar", // También para la alerta de éxito
         onConfirm: () => navigation.goBack(),
       });
 
     } catch (error) {
       console.error("Error adding document: ", error);
-      setAlertInfo({ visible: true, title: "Error", message: "Hubo un problema al registrar el empleado." });
+      setAlertInfo({ visible: true, title: "Error", message: "Hubo un problema al registrar el empleado.", confirmButtonText: "Aceptar" });
     } finally {
       setLoading(false);
     }
@@ -155,6 +159,7 @@ export default function AgregarEmpleado({ navigation }) {
         visible={alertInfo.visible}
         title={alertInfo.title}
         message={alertInfo.message}
+        confirmButtonText={alertInfo.confirmButtonText} // Pasa el texto personalizado
         onConfirm={() => {
           setAlertInfo({ ...alertInfo, visible: false });
           if (alertInfo.onConfirm) alertInfo.onConfirm();

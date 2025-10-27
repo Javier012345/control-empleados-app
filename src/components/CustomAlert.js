@@ -2,33 +2,39 @@ import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 
-const CustomAlert = ({ visible, title, message, onConfirm, onCancel }) => {
+const CustomAlert = ({ visible, title, message, onConfirm, onCancel, confirmButtonText, cancelButtonText }) => {
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
+  // Usamos onConfirm si existe, si no, usamos onCancel. Esto hace el componente más flexible.
+  const handleConfirm = onConfirm || onCancel;
+
   return (
     <Modal
-      animationType="fade"
+      animationType="none"
       transparent={true}
       visible={visible}
-      onRequestClose={onCancel}
+      onRequestClose={handleConfirm} // Permite cerrar con el botón "atrás" de Android
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{message}</Text>
           <View style={styles.buttonContainer}>
+            {onCancel && (
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton, { marginRight: 10 }]}
+                onPress={onCancel}
+              >
+                <Text style={[styles.textStyle, styles.cancelButtonText]}>{cancelButtonText || 'Cancelar'}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-            >
-              <Text style={[styles.textStyle, styles.cancelButtonText]}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              // El botón de confirmar ya no necesita estilos especiales para alinearse.
               style={[styles.button, { backgroundColor: colors.primary }]}
-              onPress={onConfirm}
+              onPress={handleConfirm}
             >
-              <Text style={styles.textStyle}>Aceptar</Text>
+              <Text style={styles.textStyle}>{confirmButtonText || (onCancel ? 'Aceptar' : 'Cerrar')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -73,22 +79,22 @@ const getStyles = (colors) => StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    justifyContent: 'center', // Centra los botones
+    marginTop: 10,
   },
   cancelButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border,
   },
   cancelButtonText: {
     color: colors.primary,
   },
   button: {
     borderRadius: 10,
-    padding: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20, // Más padding horizontal para que no se vea apretado
     elevation: 2,
-    minWidth: 100,
   },
   textStyle: {
     color: 'white',
