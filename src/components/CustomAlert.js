@@ -6,8 +6,8 @@ const CustomAlert = ({ visible, title, message, onConfirm, onCancel, confirmButt
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
-  // Usamos onConfirm si existe, si no, usamos onClose. Esto hace el componente más flexible.
-  const handleConfirm = onConfirm || onClose;
+  // Usamos onConfirm si existe, si no, usamos onCancel. Esto hace el componente más flexible.
+  const handleConfirm = onConfirm || onCancel;
 
   return (
     <Modal
