@@ -198,6 +198,11 @@ function EmployeesStack({ navigation }) {
           },
         })}
       />
+      <Stack.Screen 
+        name="EditarPerfilUsuario"
+        component={EditarPerfilUsuario}
+        options={{ headerTitle: 'Editar Perfil' }}
+      />
       {/* Grupo de pantallas modales para una mejor UX al crear/editar */}
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
       <Stack.Screen 
