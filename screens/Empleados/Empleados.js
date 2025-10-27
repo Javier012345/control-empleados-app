@@ -157,7 +157,7 @@ export default function Empleados() {
         <View style={styles.searchContainer}>
           <Feather name="search" size={20} color={colors.placeholder} />
           <TextInput
-            placeholder="Buscar por nombre o DNI..."
+            placeholder="Nombre o DNI..."
             placeholderTextColor={colors.placeholder}
             style={styles.searchInput}
             value={searchQuery}

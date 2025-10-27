@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 
 import CustomAlert from '../../src/components/CustomAlert';
+import CustomActionSheet from '../../screens/Usuarios/CustomActionSheet';
 import { useAppContext } from '../../src/context/AppContext';
 import { getStyles } from './AgregarEmpleado.styles';
 
@@ -31,24 +32,79 @@ export default function AgregarEmpleado({ navigation }) {
     message: '',
     onConfirm: () => {},
   });
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [imagePickerAction, setImagePickerAction] = useState(null);
+
+  useEffect(() => { if (imagePickerAction) { pickImage(imagePickerAction); setImagePickerAction(null); } }, [imagePickerAction]);
 
   const isValidEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const pickImage = async (source) => {
+    try {
+      const mediaTypes = ImagePicker.MediaTypeOptions?.Images ?? 'Images';
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const options = {
+        mediaTypes,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      };
+
+      let result;
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso denegado', 'Se necesita permiso para acceder a la cámara.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync(options);
+      } else { // gallery
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso denegado', 'Se necesita permiso para acceder a la galería.');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync(options);
+      }
+
+      if (!result) {
+        Alert.alert('Error', 'No se obtuvo resultado del selector de imágenes.');
+        return;
+      }
+
+      const canceled = result.canceled ?? result.cancelled ?? false;
+      const assets = result.assets ?? (result.uri ? [{ uri: result.uri }] : null);
+
+      if (!canceled && assets && assets.length > 0) {
+        setImage(assets[0].uri);
+      } else {
+        console.log('pickImage: cancelado o sin assets', result);
+      }
+    } catch (err) {
+      console.error('Error seleccionando imagen:', err);
+      Alert.alert('Error seleccionando imagen', String(err));
     }
   };
+
+  const imagePickerOptions = [
+    { label: 'Seleccionar Imagen', isTitle: true },
+    { 
+      label: 'Tomar Foto', 
+      icon: 'camera', 
+      onPress: () => { setActionSheetVisible(false); setImagePickerAction('camera'); }
+    },
+    {
+      label: 'Elegir de la Galería', 
+      icon: 'image',
+      onPress: () => { setActionSheetVisible(false); setImagePickerAction('gallery'); }
+    },
+    { label: 'Cancelar', isCancel: true, onPress: () => setActionSheetVisible(false) },
+  ];
+
+  const handleImagePick = () => setActionSheetVisible(true);
 
   const handleUpload = async (uri) => {
     const formData = new FormData();
@@ -105,15 +161,13 @@ export default function AgregarEmpleado({ navigation }) {
 
     setLoading(true);
     let imageUrl = '';
-    // Asegurarse de que cualquier alerta de error durante la subida de imagen también tenga el botón "Aceptar"
-    // Esto es una mejora general para la consistencia de las alertas de error.
     const errorAlertProps = { confirmButtonText: "Aceptar" };
 
     if (image) {
       imageUrl = await handleUpload(image);
       if (!imageUrl) {
         setLoading(false);
-        return; // Detener si la carga de la imagen falla
+        return;
       }
     }
 
@@ -141,7 +195,7 @@ export default function AgregarEmpleado({ navigation }) {
         visible: true,
         title: "Éxito",
         message: "Empleado registrado correctamente.",
-        confirmButtonText: "Aceptar", // También para la alerta de éxito
+        confirmButtonText: "Aceptar",
         onConfirm: () => navigation.goBack(),
       });
 
@@ -154,12 +208,13 @@ export default function AgregarEmpleado({ navigation }) {
   };
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
       <CustomAlert
         visible={alertInfo.visible}
         title={alertInfo.title}
         message={alertInfo.message}
-        confirmButtonText={alertInfo.confirmButtonText} // Pasa el texto personalizado
+        confirmButtonText={alertInfo.confirmButtonText}
         onConfirm={() => {
           setAlertInfo({ ...alertInfo, visible: false });
           if (alertInfo.onConfirm) alertInfo.onConfirm();
@@ -168,16 +223,20 @@ export default function AgregarEmpleado({ navigation }) {
       <View style={styles.formContainer}>
         <Text style={styles.title}>Registrar Nuevo Empleado</Text>
 
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.imagePreview} />
-          ) : (
-            <>
-              <Feather name="camera" size={24} color={colors.primary} />
-              <Text style={styles.imagePickerText}>Añadir Foto</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        <View style={styles.avatarContainer}>
+            <TouchableOpacity onPress={handleImagePick}>
+              {image ? (
+                <Image source={{ uri: image }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                  <Feather name="camera" size={30} color="#FFFFFF" />
+                </View>
+              )}
+              <View style={styles.editIcon}>
+                <Feather name="edit-2" size={14} color="#FFFFFF" />
+              </View>
+            </TouchableOpacity>
+          </View>
 
         <View style={styles.inputContainer}>
           <Feather name="user" size={20} style={styles.icon} />
@@ -277,5 +336,11 @@ export default function AgregarEmpleado({ navigation }) {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    <CustomActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        options={imagePickerOptions}
+      />
+    </>
   );
 }
