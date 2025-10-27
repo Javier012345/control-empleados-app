@@ -215,10 +215,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
         title: 'Éxito',
         message: 'Tu perfil ha sido actualizado correctamente.',
         confirmButtonText: 'Aceptar',
-        onConfirm: () => {
-          navigation.setParams({ updated: Date.now() }); // Pasa el parámetro a la pantalla anterior
-          navigation.goBack(); // Vuelve a la pantalla de Perfil
-        },
+        onConfirm: () => navigation.navigate('PerfilUsuario', { updated: Date.now() }),
       });
       
     } catch (error) {
