@@ -133,32 +133,32 @@ function HomeStack({ navigation }) {
         component={Home}
         options={({ navigation }) => getHeaderOptions('Inicio', navigation)}
       />
-      <Stack.Screen 
-        name="Notifications"
-        component={Notifications}
-        options={{ headerTitle: 'Notificaciones' }}
-      />
-      <Stack.Screen 
-        name="PerfilUsuario"
-        component={PerfilUsuario}
-        options={({ navigation, route }) => ({
-          headerTitle: 'Mi Perfil',
-          headerRight: () => {
-            const { theme } = useAppContext();
-            const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
-            return (
-              <TouchableOpacity onPress={() => navigation.navigate('EditarPerfilUsuario', { user: route.params?.user })} style={{ marginRight: 20 }}>
-                <FontAwesome name="pencil" size={22} color={colors.text} />
-              </TouchableOpacity>
-            );
-          },
-        })}
-      />
-      <Stack.Screen 
-        name="EditarPerfilUsuario"
-        component={EditarPerfilUsuario}
-        options={{ headerTitle: 'Editar Perfil' }}
-      />
+            <Stack.Screen
+              name="Notifications"
+              component={Notifications}
+              options={{ headerTitle: 'Notificaciones' }}
+            />
+            <Stack.Screen
+              name="PerfilUsuario"
+              component={PerfilUsuario}
+              options={({ navigation, route }) => ({
+                headerTitle: 'Mi Perfil',
+                headerRight: () => {
+                  const { theme } = useAppContext();
+                  const colors = theme === 'light' ? lightTheme.colors : darkTheme.colors;
+                  return (
+                    <TouchableOpacity onPress={() => navigation.navigate('EditarPerfilUsuario', { user: route.params?.user })} style={{ marginRight: 20 }}>
+                      <FontAwesome name="pencil" size={22} color={colors.text} />
+                    </TouchableOpacity>
+                  );
+                },
+              })}
+            />
+            <Stack.Screen
+              name="EditarPerfilUsuario"
+              component={EditarPerfilUsuario}
+              options={{ headerTitle: 'Editar Perfil', headerRight: () => null }}
+            />
     </Stack.Navigator>
   );
 }
@@ -180,7 +180,7 @@ function EmployeesStack({ navigation }) {
       <Stack.Screen 
         name="VerEmpleado"
         component={VerEmpleado}
-        options={{ headerTitle: 'Perfil del Empleado' }}
+        options={{ headerTitle: 'Perfil del Empleado', headerRight: () => null }}
       />
       <Stack.Screen 
         name="PerfilUsuario"
@@ -201,19 +201,19 @@ function EmployeesStack({ navigation }) {
       <Stack.Screen 
         name="EditarPerfilUsuario"
         component={EditarPerfilUsuario}
-        options={{ headerTitle: 'Editar Perfil' }}
+        options={{ headerTitle: 'Editar Perfil', headerRight: () => null }}
       />
       {/* Grupo de pantallas modales para una mejor UX al crear/editar */}
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
       <Stack.Screen 
         name="AgregarEmpleado"
         component={AgregarEmpleado}
-        options={{ headerTitle: 'Agregar Empleado' }}
+        options={{ headerTitle: 'Agregar Empleado', headerRight: () => null }}
       />
       <Stack.Screen 
         name="EditarEmpleado"
         component={EditarEmpleado}
-        options={{ headerTitle: 'Editar Empleado' }}
+        options={{ headerTitle: 'Editar Empleado', headerRight: () => null }}
       />
       </Stack.Group>
     </Stack.Navigator>
