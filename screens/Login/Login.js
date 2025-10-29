@@ -12,16 +12,45 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [alert, setAlert] = useState({ visible: false, title: '', message: '' });
   
-  // Eliminamos los errores visuales
-
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
 
-  // No validamos ni mostramos errores en pantalla
+  const validateEmail = (text) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (text && !emailRegex.test(text)) {
+      setEmailError('Formato de email inválido');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handleEmailChange = (text) => {
+    setEmail(text);
+    validateEmail(text);
+  };
+
+  const validatePassword = (text) => {
+    if (text && text.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const handlePasswordChange = (text) => {
+    setPassword(text);
+    validatePassword(text);
+  };
 
   const handleLogin = async () => {
+    if (emailError || passwordError || !email || !password) {
+      setAlert({ visible: true, title: 'Atención', message: 'Por favor, completa ambos campos correctamente.' });
+      return;
+    }
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -60,12 +89,13 @@ return (
               placeholder="ejemplo@email.com"
               placeholderTextColor={colors.placeholder}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
               keyboardType="email-address"
               autoCapitalize="none"
             />
           </View>
-
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+          
           {/* Etiqueta Contraseña */}
           <Text style={styles.label}>Contraseña</Text>
           <View style={styles.inputContainer}>
@@ -75,16 +105,17 @@ return (
               placeholder="Ej: Ejemplo123"
               placeholderTextColor={colors.placeholder}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={handlePasswordChange}
               secureTextEntry={!showPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Feather name={showPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
             </TouchableOpacity>
           </View>
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          <TouchableOpacity style={[styles.button, (!!emailError || !!passwordError) && styles.buttonDisabled]} onPress={handleLogin} disabled={loading || !!emailError || !!passwordError}>
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
