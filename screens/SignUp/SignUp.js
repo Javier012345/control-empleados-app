@@ -9,6 +9,19 @@ import CustomAlert from '../../src/components/CustomAlert';
 import { useAppContext } from '../../src/context/AppContext';
 import { getStyles } from './SignUp.styles';
 
+// Componente para mostrar cada requisito de validación de forma más visual
+const ValidationItem = ({ isValid, text, colors }) => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
+    <Feather 
+      name={isValid ? "check-circle" : "x-circle"} 
+      size={16} 
+      color={isValid ? '#28a745' : colors.primary} // Verde para éxito, rojo (primary) para error
+      style={{ marginRight: 8 }} 
+    />
+    <Text style={{ color: isValid ? '#28a745' : colors.text, fontSize: 14, opacity: isValid ? 1 : 0.8 }}>{text}</Text>
+  </View>
+);
+
 export default function SignUp({ navigation }) {
   const [fullName, setFullName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -80,22 +93,22 @@ export default function SignUp({ navigation }) {
 
   const handleSignUp = async () => {
     if (!fullName || !lastName || !email || !password || !confirmPassword) {
-      setAlert({ visible: true, title: "Error", message: "Todos los campos son requeridos." });
+      setAlert({ visible: true, title: "Error", message: "Todos los campos son requeridos.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       return;
     }
 
     if (!emailValid) {
-      setAlert({ visible: true, title: "Error", message: "El formato del email es incorrecto." });
+      setAlert({ visible: true, title: "Error", message: "El formato del email es incorrecto.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       return;
     }
 
     if (!passwordValidations.length || !passwordValidations.upper || !passwordValidations.number || !passwordValidations.lower) {
-      setAlert({ visible: true, title: "Error", message: "La contraseña no cumple los requisitos." });
+      setAlert({ visible: true, title: "Error", message: "La contraseña no cumple los requisitos.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       return;
     }
 
     if (!confirmPasswordMatch) {
-      setAlert({ visible: true, title: "Error", message: "Las contraseñas no coinciden." });
+      setAlert({ visible: true, title: "Error", message: "Las contraseñas no coinciden.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       return;
     }
 
@@ -112,25 +125,30 @@ export default function SignUp({ navigation }) {
         createdAt: serverTimestamp(), // Guardar la fecha de registro
       });
 
+      // Cerramos la sesión para que el usuario deba iniciarla manualmente
       await signOut(auth);
+
       setAlert({
         visible: true,
         title: "Registro exitoso",
-        message: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
-        onConfirm: () => {
-          setAlert({ visible: false, title: '', message: '' });
-          navigation.navigate('Login');
-        }
+        message: "Tu cuenta ha sido creada. Serás redirigido al Login en 5 segundos.",
+        hideButtons: true,
+        onConfirm: () => {}, // Función vacía para evitar comportamiento por defecto
       });
+
+      setTimeout(() => {
+        setAlert({ visible: false, title: '', message: '' });
+        navigation.navigate('Login');
+      }, 5000);
 
     } catch (error) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
         case 'auth/email-already-in-use':
-          setAlert({ visible: true, title: "Error", message: "El correo electrónico ya está en uso." });
+          setAlert({ visible: true, title: "Error", message: "El correo electrónico ya está en uso.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
           break;
         default:
-          setAlert({ visible: true, title: "Error", message: errorMessage });
+          setAlert({ visible: true, title: "Error", message: errorMessage, hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       }
     } finally {
       setLoading(false);
@@ -144,6 +162,7 @@ export default function SignUp({ navigation }) {
         visible={alert.visible}
         title={alert.title}
         message={alert.message}
+        hideButtons={alert.hideButtons || false}
         onConfirm={alert.onConfirm || (() => setAlert({ visible: false, title: '', message: '' }))}
       />
 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.kbView}>
@@ -163,6 +182,7 @@ export default function SignUp({ navigation }) {
         value={fullName}
         onChangeText={handleFullNameChange}
         autoCapitalize="words"
+        maxLength={30}
       />
     </View>
 
@@ -177,6 +197,7 @@ export default function SignUp({ navigation }) {
         value={lastName}
         onChangeText={handleLastNameChange}
         autoCapitalize="words"
+        maxLength={30}
       />
     </View>
 
@@ -194,17 +215,8 @@ export default function SignUp({ navigation }) {
         autoCapitalize="none"
       />
     </View>
-    {email.length > 0 && (
-      <Text style={{
-        color: emailValid ? 'green' : '#666',
-        fontSize: 12,
-        marginLeft: 4,
-        textAlign: 'left',
-        alignSelf: 'flex-start',
-      }}>
-        {emailValid === null ? 'Formato válido' : emailValid ? 'Formato válido' : 'Formato inválido'}
-      </Text>
-    )}
+    {/* Aviso de formato de email inválido con el nuevo estilo */}
+    {emailValid === false && <ValidationItem isValid={false} text="Formato de email inválido" colors={colors} />}
 
     {/* Contraseña */}
     <Text style={styles.label}>Contraseña </Text>
@@ -225,37 +237,12 @@ export default function SignUp({ navigation }) {
     </View>
     {/* Validaciones de contraseña */}
     {passwordTouched && (
-      <View style={{ marginLeft: 4, marginTop: 2, alignSelf: 'flex-start' }}>
-        <Text style={{
-          color: colors.text,
-          fontSize: 12,
-          fontWeight: 'bold',
-          marginBottom: 2,
-        }}>La contraseña debe incluir:</Text>
-        <Text style={{
-          color: passwordValidations.length ? 'green' : '#666',
-          fontSize: 12,
-          textAlign: 'left',
-          alignSelf: 'flex-start',
-        }}>+6 caracteres</Text>
-        <Text style={{
-          color: passwordValidations.upper ? 'green' : '#666',
-          fontSize: 12,
-          textAlign: 'left',
-          alignSelf: 'flex-start',
-        }}>Al menos una Mayúscula</Text>
-        <Text style={{
-          color: passwordValidations.lower ? 'green' : '#666',
-          fontSize: 12,
-          textAlign: 'left',
-          alignSelf: 'flex-start',
-        }}>Al menos una Minúscula</Text>
-        <Text style={{
-          color: passwordValidations.number ? 'green' : '#666',
-          fontSize: 12,
-          textAlign: 'left',
-          alignSelf: 'flex-start',
-        }}>Al menos un Número</Text>
+      <View style={{ width: '100%', paddingHorizontal: 4, marginTop: 8 }}>
+        <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>La contraseña debe incluir:</Text>
+        <ValidationItem isValid={passwordValidations.length} text="Al menos 6 caracteres" colors={colors} />
+        <ValidationItem isValid={passwordValidations.upper} text="Una letra mayúscula (A-Z)" colors={colors} />
+        <ValidationItem isValid={passwordValidations.lower} text="Una letra minúscula (a-z)" colors={colors} />
+        <ValidationItem isValid={passwordValidations.number} text="Un número (0-9)" colors={colors} />
       </View>
     )}
 
@@ -276,17 +263,8 @@ export default function SignUp({ navigation }) {
         <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={20} style={styles.icon} />
       </TouchableOpacity>
     </View>
-    {confirmPassword.length > 0 && (
-      <Text style={{
-        color: confirmPasswordMatch ? 'green' : '#666',
-        fontSize: 12,
-        marginLeft: 4,
-        textAlign: 'left',
-        alignSelf: 'flex-start',
-      }}>
-        {confirmPasswordMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden'}
-      </Text>
-    )}
+    {/* Aviso de que las contraseñas no coinciden, solo se muestra el error */}
+    {confirmPasswordMatch === false && <ValidationItem isValid={false} text="Las contraseñas no coinciden" colors={colors} />}
 
     <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
       {loading ? (
