@@ -195,4 +195,32 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     color: colors.text,
     opacity: 0.7,
   },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background, // Asegura que el fondo sea consistente
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterButtonText: {
+    color: colors.text,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
+  },
 });
