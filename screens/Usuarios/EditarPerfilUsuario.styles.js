@@ -45,6 +45,10 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
+  errorBorder: {
+    borderColor: colors.primary,
+    borderWidth: 1.5,
+  },
   placeholder: {
     color: colors.placeholder,
   },
