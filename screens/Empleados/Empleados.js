@@ -9,8 +9,6 @@ import CustomAlert from '../../src/components/CustomAlert'; // Importar CustomAl
 import { getStyles } from './Empleados.styles';
 
 const EmployeeItem = ({ item, navigation, styles, colors, showDeleteAlert }) => {
-  const [menuVisible, setMenuVisible] = useState(false);
-
   const EmployeeAvatar = ({ employee }) => {
     if (employee.imageUrl) {
       return <Image source={{ uri: employee.imageUrl }} style={styles.avatar} />;
@@ -24,61 +22,38 @@ const EmployeeItem = ({ item, navigation, styles, colors, showDeleteAlert }) => 
   };
 
   const statusStyle = [styles.statusBadge, item.status === 'Activo' ? styles.statusActive : styles.statusInactive];
-  const statusTextStyle = [styles.statusText, item.status === 'Activo' ? styles.statusTextActive : styles.statusTextInactive];
 
   return (
-    // Usamos Pressable para un mejor feedback táctil y para que toda la tarjeta sea navegable
-    <Pressable 
-      style={({ pressed }) => [styles.itemContainer, { opacity: pressed ? 0.8 : 1 }]}
-      onPress={() => navigation.navigate('VerEmpleado', { employeeId: item.id })}
-    >
+    <View style={styles.itemContainer}>
       <View style={styles.itemHeader}>
         <EmployeeAvatar employee={item} />
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{`${item.firstName} ${item.lastName}`}</Text>
           <Text style={styles.position}>{item.position}</Text>
         </View>
-        <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.moreButton}>
-          <Feather name="more-horizontal" size={24} color={colors.text} />
+      </View>
+
+      <View style={styles.itemBody}>
+        <View style={styles.detailsRow}>
+          <Text style={styles.detailText}><Text style={styles.detailLabel}>DNI:</Text> {item.dni}</Text>
+          <View style={statusStyle}>
+            <Text style={[styles.statusText, item.status === 'Activo' ? styles.statusTextActive : styles.statusTextInactive]}>{item.status}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.itemFooter}>
+        <TouchableOpacity style={styles.footerAction} onPress={() => navigation.navigate('VerEmpleado', { employeeId: item.id })}>
+          <Feather name="eye" size={20} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerAction} onPress={() => navigation.navigate('EditarEmpleado', { employee: item })}>
+          <Feather name="edit-2" size={20} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerAction} onPress={() => showDeleteAlert(item)}>
+          <Feather name="trash-2" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
-
-      {/* Restauramos el cuerpo de la tarjeta con los detalles del empleado */}
-      <View style={styles.itemBody}>
-        <Text style={styles.detailText}><Text style={styles.detailLabel}>DNI:</Text> {item.dni}</Text>
-        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Teléfono:</Text> {item.telefono}</Text>
-        <Text style={[styles.detailText, {marginTop: 4}]}><Text style={styles.detailLabel}>Email:</Text> {item.email}</Text>
-        <View style={[statusStyle, {alignSelf: 'flex-start', marginTop: 8}]}>
-          <Text style={statusTextStyle}>{item.status}</Text>
-        </View>
-      </View>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={menuVisible}
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)} />
-        <View style={styles.actionsContainer}>
-          {/* La opción "Ver Perfil" se elimina del menú, ya que la tarjeta es ahora el botón principal para ello */}
-          <TouchableOpacity style={styles.actionButton} onPress={() => { setMenuVisible(false); navigation.navigate('EditarEmpleado', { employee: item }); }}>
-            <Feather name="edit-2" size={20} style={styles.actionIcon} />
-            <Text style={styles.actionButtonText}>Editar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, { borderBottomWidth: 0 }]} 
-            onPress={() => { 
-              setMenuVisible(false); 
-              showDeleteAlert(item); // Usar la función pasada por props para mostrar el CustomAlert
-            }}
-          >
-            <Feather name="trash-2" size={20} style={[styles.actionIcon, { color: colors.primary }]} />
-            <Text style={[styles.actionButtonText, { color: colors.primary }]}>Eliminar</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
-    </Pressable>
+    </View>
   );
 };
 

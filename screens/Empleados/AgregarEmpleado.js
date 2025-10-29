@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, BackHandler } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '@react-navigation/native';
@@ -26,6 +26,7 @@ export default function AgregarEmpleado({ navigation }) {
   const [direccion, setDireccion] = useState('');
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [alertInfo, setAlertInfo] = useState({
     visible: false,
     title: '',
@@ -37,9 +38,64 @@ export default function AgregarEmpleado({ navigation }) {
 
   useEffect(() => { if (imagePickerAction) { pickImage(imagePickerAction); setImagePickerAction(null); } }, [imagePickerAction]);
 
+  // This ref stores the latest form state to avoid stale closures in the event listener.
+  const formStateRef = React.useRef({ firstName, lastName, dni, position, telefono, email, direccion, image });
+  formStateRef.current = { firstName, lastName, dni, position, telefono, email, direccion, image };
+
+  useEffect(() => {
+    const onBeforeRemove = (e) => {
+      // Get the latest state directly from the ref.
+      const { firstName, lastName, dni, position, telefono, email, direccion, image } = formStateRef.current;
+      const hasUnsavedChanges = !!(firstName || lastName || dni || position || telefono || email || direccion || image);
+
+      // Do nothing if there are no changes or if an alert is already showing.
+      if (!hasUnsavedChanges || alertInfo.visible) {
+        return;
+      }
+
+      e.preventDefault();
+
+      setAlertInfo({
+        visible: true,
+        title: 'Atención',
+        message: 'Se perderán los cambios si sales. ¿Estás seguro?',
+        confirmButtonText: 'Salir',
+        onConfirm: () => navigation.dispatch(e.data.action),
+        cancelButtonText: 'Cancelar',
+        onCancel: () => {
+          // Just hide the alert on cancel
+          setAlertInfo({ ...alertInfo, visible: false });
+        },
+      });
+    };
+
+    const unsubscribe = navigation.addListener('beforeRemove', onBeforeRemove);
+
+    return unsubscribe;
+  }, [navigation, alertInfo]);
+
+  // This separate effect handles enabling/disabling the back gesture.
+  useEffect(() => {
+    const hasUnsavedChanges = !!(firstName || lastName || dni || position || telefono || email || direccion || image);
+    navigation.setOptions({
+      gestureEnabled: !hasUnsavedChanges,
+    });
+  }, [navigation, firstName, lastName, dni, position, telefono, email, direccion, image]);
+
   const isValidEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Regex proporcionado para una validación de email más robusta.
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(email);
+  };
+
+  const isValidArgentinianDNI = (dni) => {
+    // Valida que el DNI sea numérico y tenga entre 7 y 8 dígitos.
+    return /^\d{7,8}$/.test(dni);
+  };
+
+  const isValidArgentinianPhone = (phone) => {
+    // Valida números de 10 dígitos (formato común: código de área + número).
+    return /^\d{10}$/.test(phone);
   };
 
   const pickImage = async (source) => {
@@ -133,31 +189,41 @@ export default function AgregarEmpleado({ navigation }) {
   };
 
   const handleSaveEmployee = async () => {
-    if (!firstName || !lastName || !dni || !position || !telefono || !email || !direccion || !image) {
-      setAlertInfo({ visible: true, title: "Campos requeridos", message: "Todos los campos son obligatorios, incluyendo la foto.", confirmButtonText: "Aceptar" });
-      return;
-    }
-    if (!/^[a-zA-Z\s]+$/.test(firstName)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El nombre solo debe contener letras y espacios.", confirmButtonText: "Aceptar" });
+    const newErrors = {};
+
+    // Validaciones
+    if (!firstName.trim() || firstName.trim().length < 2 || firstName.trim().length > 30) newErrors.firstName = true;
+    if (!lastName.trim() || lastName.trim().length < 2 || lastName.trim().length > 30) newErrors.lastName = true;
+    if (!isValidArgentinianDNI(dni)) newErrors.dni = true;
+    if (!position) newErrors.position = true;
+    if (!isValidArgentinianPhone(telefono)) newErrors.telefono = true;
+    if (!isValidEmail(email)) newErrors.email = true;
+    if (!direccion.trim() || direccion.trim().length < 5 || direccion.trim().length > 100) newErrors.direccion = true;
+    if (!image) newErrors.image = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      let message = "Por favor, corrige los campos marcados en rojo.";
+      if (newErrors.image) {
+        message = "Todos los campos son obligatorios, incluyendo la foto. Por favor, corrige los campos marcados en rojo.";
+      }
+      setAlertInfo({
+        visible: true,
+        title: "Campos inválidos",
+        message: message,
+        confirmButtonText: "Aceptar"
+      });
       return;
     }
 
-    if (!/^[a-zA-Z\s]+$/.test(lastName)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El apellido solo debe contener letras y espacios." });
-      return;
-    }
-    if (!/^[0-9]+$/.test(dni)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El DNI debe ser solo numérico.", confirmButtonText: "Aceptar" });
-      return;
-    }
-    if (!/^[0-9]+$/.test(telefono)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El teléfono debe ser solo numérico.", confirmButtonText: "Aceptar" });
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setAlertInfo({ visible: true, title: "Dato inválido", message: "El email no es válido.", confirmButtonText: "Aceptar" });
-      return;
-    }
+    // Si no hay errores, procede a guardar
+    executeSave();
+  };
+
+  const executeSave = async () => {
+    // Limpia errores antiguos antes de intentar guardar
+    setErrors({});
 
     setLoading(true);
     let imageUrl = '';
@@ -207,6 +273,12 @@ export default function AgregarEmpleado({ navigation }) {
     }
   };
 
+  const handleInputChange = (setter, fieldName) => (text) => {
+    setter(text);
+    if (errors[fieldName]) {
+      setErrors(prev => ({ ...prev, [fieldName]: false }));
+    }
+  };
   return (
     <>
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -215,9 +287,20 @@ export default function AgregarEmpleado({ navigation }) {
         title={alertInfo.title}
         message={alertInfo.message}
         confirmButtonText={alertInfo.confirmButtonText}
+        cancelButtonText={alertInfo.cancelButtonText}
         onConfirm={() => {
+          // Hide alert first, then run the confirm action
           setAlertInfo({ ...alertInfo, visible: false });
-          if (alertInfo.onConfirm) alertInfo.onConfirm();
+          if (alertInfo.onConfirm) {
+            alertInfo.onConfirm();
+          }
+        }}
+        onCancel={() => {
+          // Hide alert first, then run the cancel action
+          setAlertInfo({ ...alertInfo, visible: false });
+          if (alertInfo.onCancel) {
+            alertInfo.onCancel();
+          }
         }}
       />
       <View style={styles.formContainer}>
@@ -225,7 +308,7 @@ export default function AgregarEmpleado({ navigation }) {
 
         <View style={styles.avatarContainer}>
             <TouchableOpacity onPress={handleImagePick}>
-              {image ? (
+              {image ? ( 
                 <Image source={{ uri: image }} style={styles.avatar} />
               ) : (
                 <View style={[styles.avatar, styles.avatarPlaceholder]}>
@@ -238,47 +321,47 @@ export default function AgregarEmpleado({ navigation }) {
             </TouchableOpacity>
           </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.firstName && styles.errorBorder]}>
           <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Nombre"
             placeholderTextColor={colors.placeholder}
             value={firstName}
-            onChangeText={text => setFirstName(text.replace(/[^a-zA-Z\s]/g, ''))}
+            onChangeText={handleInputChange(text => setFirstName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'firstName')}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.lastName && styles.errorBorder]}>
           <Feather name="user" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Apellido"
             placeholderTextColor={colors.placeholder}
             value={lastName}
-            onChangeText={text => setLastName(text.replace(/[^a-zA-Z\s]/g, ''))}
+            onChangeText={handleInputChange(text => setLastName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'lastName')}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.dni && styles.errorBorder]}>
           <Feather name="credit-card" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="DNI"
             placeholderTextColor={colors.placeholder}
             value={dni}
-            onChangeText={text => setDni(text.replace(/[^0-9]/g, ''))}
+            onChangeText={handleInputChange(text => setDni(text.replace(/[^0-9]/g, '')), 'dni')}
             keyboardType="numeric"
-            maxLength={12}
+            maxLength={8}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.position && styles.errorBorder]}>
           <Feather name="briefcase" size={20} style={styles.icon} />
           <Picker
             selectedValue={position}
             style={[styles.input, { paddingLeft: 0 }]}
-            onValueChange={setPosition}
+            onValueChange={handleInputChange(setPosition, 'position')}
             dropdownIconColor={colors.text}
           >
             <Picker.Item label="Seleccionar cargo..." value="" color={colors.placeholder} />
@@ -289,41 +372,41 @@ export default function AgregarEmpleado({ navigation }) {
           </Picker>
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.telefono && styles.errorBorder]}>
           <Feather name="phone" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Teléfono"
             placeholderTextColor={colors.placeholder}
             value={telefono}
-            onChangeText={text => setTelefono(text.replace(/[^0-9]/g, ''))}
+            onChangeText={handleInputChange(text => setTelefono(text.replace(/[^0-9]/g, '')), 'telefono')}
             keyboardType="numeric"
-            maxLength={15}
+            maxLength={10}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.email && styles.errorBorder]}>
           <Feather name="mail" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Email"
             placeholderTextColor={colors.placeholder}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleInputChange(setEmail, 'email')}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, errors.direccion && styles.errorBorder]}>
           <Feather name="map-pin" size={20} style={styles.icon} />
           <TextInput
             style={styles.input}
             placeholder="Dirección"
             placeholderTextColor={colors.placeholder}
             value={direccion}
-            onChangeText={setDireccion}
+            onChangeText={handleInputChange(setDireccion, 'direccion')}
           />
         </View>
 

@@ -64,22 +64,37 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
   moreButton: {
     padding: 8,
   },
-  itemBody: {
+  detailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+   itemBody: {
     paddingHorizontal: 16,
     paddingBottom: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    alignItems: 'flex-start',
   },
   detailText: {
     fontSize: 14,
     color: colors.text,
   },
   detailLabel: {
-    fontWeight: '500', // Un peso ligeramente más ligero que el valor
+    fontWeight: '500',
     color: colors.text,
-    opacity: 0.6, // Reducir la opacidad para crear jerarquía
+    opacity: 0.6,
+  },
+  itemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  footerAction: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginLeft: 4,
+    borderRadius: 6,
   },
   statusBadge: {
     borderRadius: 12,
@@ -94,13 +109,13 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '600', // Un poco más de peso para que resalte en el badge
+    fontWeight: '600',
   },
   statusTextActive: {
-    color: isDarkMode ? '#6EE7B7' : '#047857', // Tonos de verde más integrados
+    color: isDarkMode ? '#6EE7B7' : '#047857',
   },
   statusTextInactive: {
-    color: isDarkMode ? '#FCD34D' : '#B45309', // Tonos de ámbar/amarillo más integrados
+    color: isDarkMode ? '#FCD34D' : '#B45309',
   },
   modalOverlay: {
     flex: 1,

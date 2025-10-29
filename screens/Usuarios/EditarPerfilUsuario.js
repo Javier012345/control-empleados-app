@@ -12,11 +12,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
-const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, styles }) => (
+const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, styles, error = false }) => (
   <View style={styles.inputContainer}>
     <Text style={styles.label}>{label}</Text>
     <TextInput
-      style={[styles.input, multiline && { height: 100, textAlignVertical: 'top' }]}
+      style={[styles.input, multiline && { height: 100, textAlignVertical: 'top' }, error && styles.errorBorder]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
@@ -43,6 +43,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
   });
   const [imageUri, setImageUri] = useState(initialUser.imageUrl || null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [confirmAlertVisible, setConfirmAlertVisible] = useState(false);
   const [infoAlert, setInfoAlert] = useState({ visible: false, title: '', message: '', onConfirm: null });
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -51,8 +52,55 @@ export default function EditarPerfilUsuario({ route, navigation }) {
   // useEffect para lanzar el selector de imágenes después de que la alerta se cierre.
   // Esto evita conflictos con el ciclo de vida de la UI en React Native.
   useEffect(() => { if (imagePickerAction) { pickImage(imagePickerAction); setImagePickerAction(null); } }, [imagePickerAction]);
+
+  // Ref para mantener el estado más reciente del formulario y evitar cierres de estado obsoletos en el listener.
+  const formStateRef = React.useRef({ formData, imageUri });
+  formStateRef.current = { formData, imageUri };
+
+  useEffect(() => {
+    const onBeforeRemove = (e) => {
+      // Obtenemos el estado más reciente directamente desde la ref para evitar cierres de estado obsoletos.
+      const { formData, imageUri } = formStateRef.current;
+      
+      // Comparamos el estado actual (de la ref) con el estado inicial del usuario.
+      const hasUnsavedChanges = (
+        formData.firstName.trim() !== (initialUser.firstName || '').trim() ||
+        formData.lastName.trim() !== (initialUser.lastName || '').trim() ||
+        formData.phone.trim() !== (initialUser.phone || '').trim() ||
+        formData.position !== (initialUser.position || '') ||
+        imageUri !== (initialUser.imageUrl || null)
+      );
+
+      // Si no hay cambios o ya hay una alerta visible, no hacemos nada.
+      // Usamos la ref para la visibilidad de la alerta también para máxima consistencia.
+      if (!hasUnsavedChanges || infoAlert.visible) {
+        return;
+      }
+
+      // Prevenimos la acción de navegación por defecto.
+      e.preventDefault();
+
+      // Mostramos la alerta de confirmación.
+      setInfoAlert({
+        visible: true,
+        title: 'Atención',
+        message: 'Se perderán los cambios si sales. ¿Estás seguro?',
+        confirmButtonText: 'Salir',
+        onConfirm: () => navigation.dispatch(e.data.action), // Si confirma, ejecuta la acción de navegación original.
+        cancelButtonText: 'Cancelar',
+        onCancel: () => setInfoAlert({ visible: false }), // Si cancela, solo cierra la alerta.
+      });
+    };
+
+    const unsubscribe = navigation.addListener('beforeRemove', onBeforeRemove);
+    return unsubscribe;
+  }, [navigation, infoAlert.visible]); // La dependencia principal es la visibilidad de la alerta.
   // ...existing code...
   // Eliminado imagePickerAction y useEffect que lanzaba el picker desde estado
+
+  const isValidArgentinianPhone = (phone) => {
+    return /^\d{10}$/.test(phone);
+  };
 
   const handleInputChange = (field, value) => {
     let sanitizedValue = value;
@@ -64,6 +112,9 @@ export default function EditarPerfilUsuario({ route, navigation }) {
       sanitizedValue = value.replace(/[^0-9]/g, '');
     }
     setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: false }));
+    }
   };
 
   const checkForChanges = () => {
@@ -77,9 +128,16 @@ export default function EditarPerfilUsuario({ route, navigation }) {
   };
 
   const handleSavePress = () => {
-    if (!formData.firstName || !formData.lastName) {
-        setInfoAlert({ visible: true, title: 'Campos requeridos', message: 'El nombre y el apellido no pueden estar vacíos.', confirmButtonText: 'Aceptar'});
-        return;
+    const newErrors = {};
+    if (!formData.firstName.trim() || formData.firstName.trim().length < 2 || formData.firstName.trim().length > 30) newErrors.firstName = true;
+    if (!formData.lastName.trim() || formData.lastName.trim().length < 2 || formData.lastName.trim().length > 30) newErrors.lastName = true;
+    if (!isValidArgentinianPhone(formData.phone)) newErrors.phone = true;
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      setInfoAlert({ visible: true, title: 'Campos inválidos', message: 'Por favor, corrige los campos marcados en rojo.', confirmButtonText: 'Aceptar'});
+      return;
     }
 
     if (!checkForChanges()) {
@@ -264,6 +322,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
             onChangeText={(val) => handleInputChange('firstName', val)}
             placeholder="Ingresa tu nombre"
             styles={styles}
+            error={errors.firstName}
           />
           <FormInput
             label="Apellido"
@@ -271,6 +330,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
             onChangeText={(val) => handleInputChange('lastName', val)}
             placeholder="Ingresa tu apellido"
             styles={styles}
+            error={errors.lastName}
           />
           <FormInput
             label="Teléfono"
@@ -279,6 +339,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
             placeholder="Ej: 1122334455"
             keyboardType="numeric"
             styles={styles}
+            error={errors.phone}
           />
           
           <View style={styles.inputContainer}>
@@ -321,6 +382,12 @@ export default function EditarPerfilUsuario({ route, navigation }) {
         onConfirm={() => {
           const callback = infoAlert.onConfirm;
           setInfoAlert({ visible: false, title: '', message: '', onConfirm: null });
+          if (callback) callback();
+        }}
+        onCancel={() => {
+          const callback = infoAlert.onCancel;
+          // Aseguramos que onCancel también se limpie
+          setInfoAlert({ visible: false, title: '', message: '', onConfirm: null, onCancel: null });
           if (callback) callback();
         }}
       />

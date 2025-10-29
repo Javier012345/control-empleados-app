@@ -59,6 +59,10 @@ export const getStyles = (colors) => StyleSheet.create({
     height: 50,
     marginBottom: 16,
   },
+  errorBorder: {
+    borderColor: colors.primary, // Usa el color primario (rojo) para el borde de error
+    borderWidth: 1.5,
+  },
   icon: {
     color: colors.text,
     opacity: 0.6,
