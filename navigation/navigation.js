@@ -14,7 +14,6 @@ import Empleados from '../screens/Empleados/Empleados'; // Ruta y nombre actuali
 import AgregarEmpleado from '../screens/Empleados/AgregarEmpleado'; // Ruta y nombre actualizados
 import VerEmpleado from '../screens/Empleados/VerEmpleado';
 import EditarEmpleado from '../screens/Empleados/EditarEmpleado';
-import Notifications from '../screens/Notifications/Notifications'; // Importar la nueva pantalla
 import PerfilUsuario from '../screens/Usuarios/PerfilUsuario'; // Importar la pantalla de perfil
 import EditarPerfilUsuario from '../screens/Usuarios/EditarPerfilUsuario';
 import CustomAlert from '../src/components/CustomAlert';
@@ -52,9 +51,6 @@ function HeaderRightIcons({ navigation }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
       <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 20 }}>
         <FontAwesome name={theme === 'light' ? 'moon-o' : 'sun-o'} size={24} color={colors.text} />
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ marginRight: 20 }}>
-        <FontAwesome name="bell-o" size={24} color={colors.text} />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('PerfilUsuario')}>
         <FontAwesome name="user-circle-o" size={24} color={colors.text} />
@@ -133,11 +129,6 @@ function HomeStack({ navigation }) {
         component={Home}
         options={({ navigation }) => getHeaderOptions('Inicio', navigation)}
       />
-            <Stack.Screen
-              name="Notifications"
-              component={Notifications}
-              options={{ headerTitle: 'Notificaciones' }}
-            />
             <Stack.Screen
               name="PerfilUsuario"
               component={PerfilUsuario}
