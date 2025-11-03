@@ -106,4 +106,27 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  modalImage: {
+    width: '90%',
+    height: 'auto',
+    aspectRatio: 1,
+    borderRadius: 20,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  closeButtonIcon: {
+    color: '#FFFFFF',
+  },
 });

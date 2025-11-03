@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, StyleSheet, Image } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, StyleSheet, Image, Modal, Pressable } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
@@ -28,13 +28,15 @@ const InfoRow = ({ icon, label, value, styles, isSelectable = false, isLast = fa
   </View>
 );
 
-const UserAvatar = ({ user, styles }) => {
+const UserAvatar = ({ user, styles, onPress }) => {
   if (user?.imageUrl) {
     return (
-      <Image 
-        source={{ uri: user.imageUrl }} 
-        style={styles.avatar} 
-      />
+      <TouchableOpacity onPress={onPress}>
+        <Image 
+          source={{ uri: user.imageUrl }} 
+          style={styles.avatar} 
+        />
+      </TouchableOpacity>
     );
   } else {
     const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`.toUpperCase();
@@ -71,6 +73,7 @@ export default function PerfilUsuario({ navigation, route }) {
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
   const [alertVisible, setAlertVisible] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -133,7 +136,7 @@ export default function PerfilUsuario({ navigation, route }) {
     <>
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <UserAvatar user={user} styles={styles} />
+          <UserAvatar user={user} styles={styles} onPress={() => user.imageUrl && setModalVisible(true)} />
           <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
         </View>
 
@@ -165,6 +168,22 @@ export default function PerfilUsuario({ navigation, route }) {
         onConfirm={confirmLogout}
         onCancel={() => setAlertVisible(false)}
       />
+
+      {user?.imageUrl && (
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isModalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <Pressable style={styles.modalContainer} onPress={() => setModalVisible(false)}>
+            <Image source={{ uri: user.imageUrl }} style={styles.modalImage} />
+            <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+              <Feather name="x" size={24} style={styles.closeButtonIcon} />
+            </TouchableOpacity>
+          </Pressable>
+        </Modal>
+      )}
     </>
   );
 }

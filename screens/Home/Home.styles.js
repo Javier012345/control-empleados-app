@@ -4,6 +4,7 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    paddingTop: 8, // Añade un pequeño espacio superior
   },
   centerContainer: {
     flex: 1,
@@ -15,7 +16,7 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 16,
   },
   card: {
     backgroundColor: colors.card,
@@ -24,10 +25,12 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     width: '48%',
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDarkMode ? 0.25 : 0.08, // Sombra más notoria
+    shadowRadius: 4,
+    elevation: 3, // Elevación más pronunciada para Android
+    borderWidth: 1, // Borde sutil
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -38,13 +41,14 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
   cardTitle: {
     fontSize: 14,
     color: colors.text,
-    opacity: 0.7,
-    fontWeight: '500',
+    opacity: 0.8, // Un poco más visible
+    fontWeight: '600', // Ligeramente más grueso
   },
   cardValue: {
     fontSize: 30,
     fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.5, // Ajuste de espaciado para números grandes
   },
   section: {
     backgroundColor: colors.card,
@@ -52,6 +56,12 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1, // Borde sutil también para las secciones
+    borderColor: colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: isDarkMode ? 0.15 : 0.04,
+    shadowRadius: 3,
   },
   sectionTitle: {
     fontSize: 18,
@@ -62,7 +72,7 @@ export const getStyles = (isDarkMode, colors) => StyleSheet.create({
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingVertical: 8, // Espaciado vertical en lugar de margen inferior
   },
   activityIconContainer: {
     width: 40,
