@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ActivityIndicator, Image, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { useTheme } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../src/config/firebaseConfig';
 import { getStyles } from './VerEmpleado.styles';
 
-const EmployeeAvatar = ({ employee, styles }) => {
+const EmployeeAvatar = ({ employee, styles, onPress }) => {
   if (employee?.imageUrl) {
-    return <Image source={{ uri: employee.imageUrl }} style={styles.avatar} />;
+    return (
+      <TouchableOpacity onPress={onPress}><Image source={{ uri: employee.imageUrl }} style={styles.avatar} /></TouchableOpacity>
+    );
   }
   const initials = `${employee?.firstName?.[0] || ''}${employee?.lastName?.[0] || ''}`.toUpperCase();
   return (
@@ -22,6 +24,7 @@ export default function VerEmpleado({ route, navigation }) {
   const { employeeId } = route.params;
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setModalVisible] = useState(false);
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
 
@@ -65,7 +68,7 @@ export default function VerEmpleado({ route, navigation }) {
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <EmployeeAvatar employee={employee} styles={styles} />
+          <EmployeeAvatar employee={employee} styles={styles} onPress={() => setModalVisible(true)} />
           <Text style={styles.name}>{`${employee.firstName} ${employee.lastName}`}</Text>
           <Text style={styles.position}>{employee.position}</Text>
           <View style={[statusBadgeStyle, { marginTop: 12 }]}>
@@ -111,6 +114,20 @@ export default function VerEmpleado({ route, navigation }) {
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('EditarEmpleado', { employee })}>
         <Feather name="edit-2" size={24} color="#fff" />
       </TouchableOpacity>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable style={styles.modalContainer} onPress={() => setModalVisible(false)}>
+          <Image source={{ uri: employee.imageUrl }} style={styles.modalImage} />
+          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <Feather name="x" size={24} style={styles.closeButtonIcon} />
+          </TouchableOpacity>
+        </Pressable>
+      </Modal>
     </>
   );
 }
