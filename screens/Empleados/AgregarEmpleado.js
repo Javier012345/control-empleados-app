@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, BackHandler } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
@@ -98,6 +99,10 @@ export default function AgregarEmpleado({ navigation }) {
     return /^\d{10}$/.test(phone);
   };
 
+  const isValidName = (name) => {
+    return /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/g.test(name);
+  };
+
   const pickImage = async (source) => {
     try {
       const mediaTypes = ImagePicker.MediaTypeOptions?.Images ?? 'Images';
@@ -192,8 +197,8 @@ export default function AgregarEmpleado({ navigation }) {
     const newErrors = {};
 
     // Validaciones
-    if (!firstName.trim() || firstName.trim().length < 2 || firstName.trim().length > 30) newErrors.firstName = true;
-    if (!lastName.trim() || lastName.trim().length < 2 || lastName.trim().length > 30) newErrors.lastName = true;
+    if (!firstName.trim() || firstName.trim().length < 4 || firstName.trim().length > 25 || !isValidName(firstName)) newErrors.firstName = true;
+    if (!lastName.trim() || lastName.trim().length < 4 || lastName.trim().length > 25 || !isValidName(lastName)) newErrors.lastName = true;
     if (!isValidArgentinianDNI(dni)) newErrors.dni = true;
     if (!position) newErrors.position = true;
     if (!isValidArgentinianPhone(telefono)) newErrors.telefono = true;
@@ -328,7 +333,11 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="Nombre"
             placeholderTextColor={colors.placeholder}
             value={firstName}
-            onChangeText={handleInputChange(text => setFirstName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'firstName')}
+            onChangeText={(text) => {
+              const sanitizedText = text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '');
+              handleInputChange(setFirstName, 'firstName')(sanitizedText);
+            }}
+            maxLength={25}
           />
         </View>
 
@@ -339,7 +348,11 @@ export default function AgregarEmpleado({ navigation }) {
             placeholder="Apellido"
             placeholderTextColor={colors.placeholder}
             value={lastName}
-            onChangeText={handleInputChange(text => setLastName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'lastName')}
+            onChangeText={(text) => {
+              const sanitizedText = text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '');
+              handleInputChange(setLastName, 'lastName')(sanitizedText);
+            }}
+            maxLength={25}
           />
         </View>
 
