@@ -45,6 +45,17 @@ export default function SignUp({ navigation }) {
   });
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordMatch, setConfirmPasswordMatch] = useState(null); // null: no escrito, false: mal, true: bien
+  const [fullNameTouched, setFullNameTouched] = useState(false);
+  const [lastNameTouched, setLastNameTouched] = useState(false);
+
+  const [fullNameValidations, setFullNameValidations] = useState({
+    length: false,
+    format: false,
+  });
+  const [lastNameValidations, setLastNameValidations] = useState({
+    length: false,
+    format: false,
+  });
 
   const { dark: isDarkMode, colors } = useTheme();
   const styles = getStyles(isDarkMode, colors);
@@ -52,15 +63,33 @@ export default function SignUp({ navigation }) {
 
   // Solo permitir letras y espacios en el nombre
   const handleFullNameChange = (text) => {
-    setFullName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
+    if (!fullNameTouched) setFullNameTouched(true);
+    const formatRegex = /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/;
+    const trimmedText = text.trim();
+
+    setFullName(text);
+
+    setFullNameValidations({
+      length: trimmedText.length >= 4 && trimmedText.length <= 25,
+      format: formatRegex.test(text),
+    });
   };
 
   const handleLastNameChange = (text) => {
-    setLastName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, ''));
+    if (!lastNameTouched) setLastNameTouched(true);
+    const formatRegex = /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/;
+    const trimmedText = text.trim();
+
+    setLastName(text);
+
+    setLastNameValidations({
+      length: trimmedText.length >= 4 && trimmedText.length <= 25,
+      format: formatRegex.test(text),
+    });
   };
 
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const handleEmailChange = (text) => {
     setEmail(text);
     if (text.length === 0) {
@@ -94,6 +123,16 @@ export default function SignUp({ navigation }) {
   const handleSignUp = async () => {
     if (!fullName || !lastName || !email || !password || !confirmPassword) {
       setAlert({ visible: true, title: "Error", message: "Todos los campos son requeridos.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
+      return;
+    }
+
+    if (!fullNameValidations.length || !fullNameValidations.format) {
+      setAlert({ visible: true, title: "Error", message: "El nombre no cumple los requisitos.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
+      return;
+    }
+
+    if (!lastNameValidations.length || !lastNameValidations.format) {
+      setAlert({ visible: true, title: "Error", message: "El apellido no cumple los requisitos.", hideButtons: true, onConfirm: () => setAlert({ visible: false }) });
       return;
     }
 
@@ -131,7 +170,7 @@ export default function SignUp({ navigation }) {
       setAlert({
         visible: true,
         title: "Registro exitoso",
-        message: "Tu cuenta ha sido creada. Serás redirigido al Login en 5 segundos.",
+        message: "Tu cuenta ha sido creada.",
         hideButtons: true,
         onConfirm: () => {}, // Función vacía para evitar comportamiento por defecto
       });
@@ -179,12 +218,16 @@ export default function SignUp({ navigation }) {
         style={styles.input}
         placeholder="Nombre"
         placeholderTextColor={colors.placeholder}
-        value={fullName}
-        onChangeText={handleFullNameChange}
         autoCapitalize="words"
-        maxLength={30}
+        maxLength={25}
       />
     </View>
+    {fullNameTouched && (
+      <View style={{ width: '100%', paddingHorizontal: 4, marginTop: 8 }}>
+        <ValidationItem isValid={fullNameValidations.length} text="Entre 4 y 25 caracteres" colors={colors} />
+        <ValidationItem isValid={fullNameValidations.format} text="Solo letras y espacios" colors={colors} />
+      </View>
+    )}
 
     {/* Apellido */}
     <Text style={styles.label}>Apellido </Text>
@@ -197,9 +240,15 @@ export default function SignUp({ navigation }) {
         value={lastName}
         onChangeText={handleLastNameChange}
         autoCapitalize="words"
-        maxLength={30}
+        maxLength={25}
       />
     </View>
+    {lastNameTouched && (
+      <View style={{ width: '100%', paddingHorizontal: 4, marginTop: 8 }}>
+        <ValidationItem isValid={lastNameValidations.length} text="Entre 4 y 25 caracteres" colors={colors} />
+        <ValidationItem isValid={lastNameValidations.format} text="Solo letras y espacios" colors={colors} />
+      </View>
+    )}
 
     {/* Email */}
     <Text style={styles.label}>Email </Text>

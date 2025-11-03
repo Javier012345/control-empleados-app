@@ -20,7 +20,7 @@ export default function Login({ navigation }) {
   const styles = getStyles(isDarkMode, colors);
 
   const validateEmail = (text) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (text && !emailRegex.test(text)) {
       setEmailError('Formato de email inválido');
     } else {
@@ -34,8 +34,9 @@ export default function Login({ navigation }) {
   };
 
   const validatePassword = (text) => {
-    if (text && text.length < 6) {
-      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{6,}$/;
+    if (text && !passwordRegex.test(text)) {
+      setPasswordError('Debe tener 6+ caracteres');
     } else {
       setPasswordError('');
     }

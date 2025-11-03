@@ -12,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { cloudinaryConfig } from '../../src/config/cloudinaryConfig';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 
-const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, styles, error = false }) => (
+const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, styles, error = false, maxLength }) => (
   <View style={styles.inputContainer}>
     <Text style={styles.label}>{label}</Text>
     <TextInput
@@ -24,6 +24,7 @@ const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'de
       keyboardType={keyboardType}
       multiline={multiline}
       autoCapitalize="words"
+      maxLength={maxLength}
     />
   </View>
 );
@@ -105,8 +106,8 @@ export default function EditarPerfilUsuario({ route, navigation }) {
   const handleInputChange = (field, value) => {
     let sanitizedValue = value;
     if (field === 'firstName' || field === 'lastName') {
-      // Permite solo letras y espacios
-      sanitizedValue = value.replace(/[^a-zA-Z\s]/g, '');
+      // Permite solo letras, espacios y caracteres específicos
+      sanitizedValue = value.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '');
     } else if (field === 'phone') {
       // Permite solo números
       sanitizedValue = value.replace(/[^0-9]/g, '');
@@ -129,8 +130,10 @@ export default function EditarPerfilUsuario({ route, navigation }) {
 
   const handleSavePress = () => {
     const newErrors = {};
-    if (!formData.firstName.trim() || formData.firstName.trim().length < 2 || formData.firstName.trim().length > 30) newErrors.firstName = true;
-    if (!formData.lastName.trim() || formData.lastName.trim().length < 2 || formData.lastName.trim().length > 30) newErrors.lastName = true;
+    const nameRegex = /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/;
+
+    if (!formData.firstName.trim() || formData.firstName.trim().length < 4 || formData.firstName.trim().length > 25 || !nameRegex.test(formData.firstName)) newErrors.firstName = true;
+    if (!formData.lastName.trim() || formData.lastName.trim().length < 4 || formData.lastName.trim().length > 25 || !nameRegex.test(formData.lastName)) newErrors.lastName = true;
     if (!isValidArgentinianPhone(formData.phone)) newErrors.phone = true;
 
     setErrors(newErrors);
@@ -323,6 +326,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
             placeholder="Ingresa tu nombre"
             styles={styles}
             error={errors.firstName}
+            maxLength={25}
           />
           <FormInput
             label="Apellido"
@@ -331,6 +335,7 @@ export default function EditarPerfilUsuario({ route, navigation }) {
             placeholder="Ingresa tu apellido"
             styles={styles}
             error={errors.lastName}
+            maxLength={25}
           />
           <FormInput
             label="Teléfono"

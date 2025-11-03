@@ -113,6 +113,10 @@ export default function EditarEmpleado({ route, navigation }) {
     return /^\d{10}$/.test(phone);
   };
 
+  const isValidName = (name) => {
+    return /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/g.test(name);
+  };
+
   const pickImage = async (source) => {
     try {
       const mediaTypes = ImagePicker.MediaTypeOptions?.Images ?? 'Images';
@@ -218,8 +222,8 @@ export default function EditarEmpleado({ route, navigation }) {
     const newErrors = {};
 
     // Validaciones
-    if (!firstName.trim() || firstName.trim().length < 2 || firstName.trim().length > 30) newErrors.firstName = true;
-    if (!lastName.trim() || lastName.trim().length < 2 || lastName.trim().length > 30) newErrors.lastName = true;
+    if (!firstName.trim() || firstName.trim().length < 4 || firstName.trim().length > 25 || !isValidName(firstName)) newErrors.firstName = true;
+    if (!lastName.trim() || lastName.trim().length < 4 || lastName.trim().length > 25 || !isValidName(lastName)) newErrors.lastName = true;
     if (!isValidArgentinianDNI(dni)) newErrors.dni = true;
     if (!position) newErrors.position = true;
     if (!isValidArgentinianPhone(telefono)) newErrors.telefono = true;
@@ -352,7 +356,8 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="Nombre"
             placeholderTextColor={colors.placeholder}
             value={firstName}
-            onChangeText={handleInputChange(text => setFirstName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'firstName')}
+            onChangeText={handleInputChange(text => setFirstName(text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '')), 'firstName')}
+            maxLength={25}
           />
         </View>
 
@@ -363,7 +368,8 @@ export default function EditarEmpleado({ route, navigation }) {
             placeholder="Apellido"
             placeholderTextColor={colors.placeholder}
             value={lastName}
-            onChangeText={handleInputChange(text => setLastName(text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\s]/g, '')), 'lastName')}
+            onChangeText={handleInputChange(text => setLastName(text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '')), 'lastName')}
+            maxLength={25}
           />
         </View>
 
