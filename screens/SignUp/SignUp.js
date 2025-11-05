@@ -218,6 +218,8 @@ export default function SignUp({ navigation }) {
         style={styles.input}
         placeholder="Nombre"
         placeholderTextColor={colors.placeholder}
+        value={fullName}
+        onChangeText={handleFullNameChange}
         autoCapitalize="words"
         maxLength={25}
       />
