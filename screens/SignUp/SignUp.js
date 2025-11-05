@@ -64,27 +64,27 @@ export default function SignUp({ navigation }) {
   // Solo permitir letras y espacios en el nombre
   const handleFullNameChange = (text) => {
     if (!fullNameTouched) setFullNameTouched(true);
-    const formatRegex = /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/;
-    const trimmedText = text.trim();
+    // Sanitizamos el texto para que solo contenga letras, espacios y caracteres en español
+    const sanitizedText = text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '');
+    setFullName(sanitizedText);
 
-    setFullName(text);
-
+    const trimmedText = sanitizedText.trim();
     setFullNameValidations({
       length: trimmedText.length >= 4 && trimmedText.length <= 25,
-      format: formatRegex.test(text),
+      format: /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/.test(sanitizedText),
     });
   };
 
   const handleLastNameChange = (text) => {
     if (!lastNameTouched) setLastNameTouched(true);
-    const formatRegex = /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/;
-    const trimmedText = text.trim();
+    // Sanitizamos el texto para que solo contenga letras, espacios y caracteres en español
+    const sanitizedText = text.replace(/[^a-zA-Z\sñÑ\u00C0-\u017F]/g, '');
+    setLastName(sanitizedText);
 
-    setLastName(text);
-
+    const trimmedText = sanitizedText.trim();
     setLastNameValidations({
       length: trimmedText.length >= 4 && trimmedText.length <= 25,
-      format: formatRegex.test(text),
+      format: /^[a-zA-Z\sñÑ\u00C0-\u017F]*$/.test(sanitizedText),
     });
   };
 
